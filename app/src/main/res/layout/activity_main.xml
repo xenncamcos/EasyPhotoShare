@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="6pt">
+
+            <TextView
+                android:id="@+id/main_app_explanation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingExtra="8sp"
+                android:text="このアプリはテザリングを必要とします\n開始前に必ず有効にして下さい\n"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                tools:layout_editor_absoluteX="64dp"
+                tools:layout_editor_absoluteY="216dp" />
+
+            <TextView
+                android:id="@+id/main_txt_info_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="サービスの操作\n"
+                android:textAlignment="center"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textColor="#FF5722" />
+
+            <Button
+                android:id="@+id/main_btn_start"
+                style="@style/Widget.AppCompat.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2pt"
+                android:enabled="false"
+                android:text="Start Service"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/main_btn_stop"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2pt"
+                android:enabled="false"
+                android:text="Stop Service"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/main_btn_sel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="SELECT FOLDER"
+                android:textSize="18sp" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="10pt" />
+
+            <TextView
+                android:id="@+id/main_txt_info_title2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="サービスの状態\n"
+                android:textAlignment="center"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textColor="#FF5722" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+
+                <Button
+                    android:id="@+id/main_btn_copy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="2pt"
+                    android:layout_weight="1"
+                    android:enabled="false"
+                    android:text="リンクをコピー"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/main_btn_share"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="2pt"
+                    android:layout_weight="1"
+                    android:enabled="false"
+                    android:text="リンクを共有"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/main_btn_qr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:enabled="false"
+                    android:text="QRを表示"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="10pt" />
+
+            <TextView
+                android:id="@+id/main_txt_info_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="サービスが起動されていません\n"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textColor="#2196F3"
+                android:textColorLink="#3F51B5" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,58 @@
+<!--
+  ~ Copyright 2018 The app Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/set_client_header">
+
+        <EditTextPreference
+            android:defaultValue="true"
+            android:key="set_host_name"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/set_host_name" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/set_server_header">
+
+        <EditTextPreference
+            android:key="set_server_port"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="@string/set_server_port" />
+        <SwitchPreferenceCompat
+            app:key="set_server_delcache"
+            app:summaryOff="@string/set_server_delcache_off"
+            app:summaryOn="@string/set_server_delcache_on"
+            app:title="@string/set_server_delcache" />
+        <SwitchPreferenceCompat
+            app:key="set_server_autokill"
+            app:summaryOff="@string/set_server_autokill_off"
+            app:summaryOn="@string/set_server_autokill_on"
+            app:title="@string/set_server_autokill" />
+        <SwitchPreferenceCompat
+            android:id="@+id/switchPreferenceCompat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:key="set_server_keepalive"
+            app:summaryOff="@string/set_server_keepalive_off"
+            app:summaryOn="@string/set_server_keepalive_on"
+            app:title="@string/set_server_keepalive" />
+
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

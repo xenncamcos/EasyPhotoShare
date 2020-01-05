@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".QrViewFragment">
+
+        <TextView
+            android:id="@+id/txt_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="サービスURL"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="#3F51B5"
+            android:visibility="visible" />
+
+
+    <ImageView
+        android:id="@+id/qr_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="90dp"
+        android:layout_marginTop="-90dp"
+        android:layout_marginRight="90dp"
+        android:layout_marginBottom="-70dp"
+        android:minWidth="100dp"
+        android:minHeight="100dp"
+        android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/txt_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="アクセスポイント"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="#3F51B5"
+            android:visibility="visible" />
+
+
+        <ImageView
+            android:id="@+id/qr_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="90dp"
+            android:layout_marginTop="-90dp"
+            android:layout_marginRight="90dp"
+            android:layout_marginBottom="-70dp"
+            android:minWidth="100dp"
+            android:minHeight="100dp"
+            android:scaleType="fitCenter" />
+
+
+
+</LinearLayout>

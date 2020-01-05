@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">EasyPhotoShare</string>
+    <string name="title_activity_main">EasyPhotoShare</string>
+    <string name="title_activity_qr">QR Code</string>
+    <string name="title_activity_settings">設定</string>
+
+    <string name="menu_main_setting">設定</string>
+    <string name="menu_main_license">ライセンス</string>
+    <string name="menu_main_exit">終了</string>
+
+    <string name="set_server_header">サーバー設定</string>
+    <string name="set_server_keepalive">HTTPキープアライブ</string>
+    <string name="set_server_keepalive_on">複数リクエストをまとめて処理します (規定値)</string>
+    <string name="set_server_keepalive_off">問題が場合は無効にして下さい</string>
+    <string name="set_server_port">ポート (整数)</string>
+    <string name="set_server_maxcache">概算の最大キャッシュサイズ (MB)</string>
+    <string name="set_client_header">基本設定</string>
+    <string name="set_host_name">ホスト名 (英数字)</string>
+    <string name="set_server_autokill">サービスの自動終了</string>
+    <string name="set_server_autokill_off">自動終了を行わない (規定値)</string>
+    <string name="set_server_autokill_on">30分間未接続で自動停止</string>
+    <string name="set_server_delcache">キャッシュの即時削除</string>
+    <string name="set_server_delcache_on">サービス終了後にキャッシュを即時に削除</string>
+    <string name="set_server_delcache_off">次回アクセス用にキャッシュを維持 (規定値)</string>
+
+
+</resources>
