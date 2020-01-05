@@ -459,6 +459,8 @@ public class MainService extends Service {
 			} else if (name.length() > 5 && name.startsWith("data/")) {
 				// スマホ内の画像データ
 				response = m_image.getImage(name.substring(5));
+				if (response == null)
+					response = getAssetFile("_err_m.jpg");
 
 				if (name.endsWith(".jpg") || name.endsWith(".jpeg"))
 					type = "image/jpeg";
@@ -773,11 +775,14 @@ public class MainService extends Service {
 		private WatchService s_watcher = null;
 		private String s_index = null;
 		private TreeMap<String, String> s_images = null;
+		ArrayList<String> m_err_files = null;;
 
 
 		public ImageService(String root_uri) {
 			s_exec_worker = Executors.newFixedThreadPool(IMAGE_MAX_REQUEST_CONVERT);
 			s_root_uri = root_uri;
+
+			m_err_files = new ArrayList<String>();
 		}
 
 		@Override
@@ -1030,7 +1035,6 @@ public class MainService extends Service {
 			return s_index.getBytes();
 		}
 
-		// TODO: 破損用ファイルを返す
 		public byte[] getImage(String name) {
 			try {
 				// 存在確認とDocID取得
@@ -1038,6 +1042,8 @@ public class MainService extends Service {
 				Cursor c = getContentResolver().query(docUri, SAF_IDX, null, null, null, null);
 
 				if (c == null || !c.moveToFirst())
+					return null;
+				if (m_err_files.indexOf(name) != -1)
 					return null;
 
 				int datasize = Integer.parseInt(c.getString(SAF_SIZE));
@@ -1092,9 +1098,10 @@ public class MainService extends Service {
 			return null;
 		}
 
-		// TODO: 破損用ファイルを返す
 		public byte[] getImage_s(String name) {
 			if (s_images.get(name) == null)
+				return null;
+			if (m_err_files.indexOf(name) != -1)
 				return null;
 
 			try {
@@ -1134,6 +1141,8 @@ public class MainService extends Service {
 		// TODO: 破損用ファイルを返す
 		public byte[] getImage_m(String name) {
 			if (s_images.get(name) == null)
+				return null;
+			if (m_err_files.indexOf(name) != -1)
 				return null;
 
 			try {
@@ -1205,8 +1214,9 @@ public class MainService extends Service {
 			Cursor c = getContentResolver()
 					.query(docUri, SAF_IDX, null, null, null, null);
 
-			if (c == null || !c.moveToFirst())
+			if (c == null || !c.moveToFirst()) {
 				return;
+			}
 
 			String ts_new = c.getString(SAF_DATE);
 			String ts_old = null;
@@ -1229,8 +1239,10 @@ public class MainService extends Service {
 					e.printStackTrace();
 				}
 
-				if (ts_new.equals(ts_old))
+				if (ts_new.equals(ts_old)) {
+					m_err_files.add(name);
 					return;
+				}
 			}
 
 			try {
@@ -1239,6 +1251,7 @@ public class MainService extends Service {
 				filewriter.close();
 			} catch (IOException e) {
 				e.printStackTrace();
+				m_err_files.add(name);
 				return;
 			}
 
@@ -1256,6 +1269,7 @@ public class MainService extends Service {
 					parcelFileDescriptor.close();
 				} catch (IOException ex) {
 				}
+				m_err_files.add(name);
 				return;
 			}
 
@@ -1267,6 +1281,7 @@ public class MainService extends Service {
 					parcelFileDescriptor.close();
 				} catch (IOException e) {
 				}
+				m_err_files.add(name);
 				return;
 			}
 
@@ -1276,6 +1291,7 @@ public class MainService extends Service {
 				exif = new ExifInterface(fileDescriptor);
 			} catch (IOException e) {
 				e.printStackTrace();
+				m_err_files.add(name);
 				file_t.delete();
 				return;
 			}
@@ -1342,11 +1358,13 @@ public class MainService extends Service {
 				fOut.close();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
+				m_err_files.add(name);
 				file_t.delete();
 				file_s.delete();
 				return;
 			} catch (IOException e) {
 				e.printStackTrace();
+				m_err_files.add(name);
 				file_t.delete();
 				file_s.delete();
 				return;
@@ -1386,12 +1404,14 @@ public class MainService extends Service {
 				fOut.close();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
+				m_err_files.add(name);
 				file_t.delete();
 				file_s.delete();
 				file_m.delete();
 				return;
 			} catch (IOException e) {
 				e.printStackTrace();
+				m_err_files.add(name);
 				file_t.delete();
 				file_s.delete();
 				file_m.delete();
@@ -1402,6 +1422,7 @@ public class MainService extends Service {
 				parcelFileDescriptor.close();
 			} catch (IOException e) {
 				e.printStackTrace();
+				m_err_files.add(name);
 			}
 		}
 
