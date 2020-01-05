@@ -228,7 +228,7 @@ $.fn.simpleLightbox = function( options )
 					return;
 				}
 				if(options.alertError){
-					alert(options.alertErrorMessage);
+					//alert(options.alertErrorMessage);
 				}
 				if(dirDefinined){
 					loadImage(dir);

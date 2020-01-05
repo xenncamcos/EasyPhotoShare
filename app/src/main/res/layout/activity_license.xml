@@ -55,7 +55,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2pt"
             android:autoLink="web"
-            android:text="EasyPhotoShare\nCopyright (C) 2019 xenn\nhttps://github.com/xenncamcos/easyphotoshare\nReleased under the Apache License, Version 2.0\nhttp://www.apache.org/licenses/LICENSE-2.0"
+            android:text="EasyPhotoShare\nCopyright (C) 2019 xenn\nhttps://github.com/xenncamcos/EasyPhotoShare\nReleased under the Apache License, Version 2.0\nhttp://www.apache.org/licenses/LICENSE-2.0"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
         <TextView
