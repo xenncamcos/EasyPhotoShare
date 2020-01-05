@@ -55,7 +55,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2pt"
             android:autoLink="web"
-            android:text="EasyPhotoShare\nCopyright (C) 2019 xenncam, silverintegral\nhttps://github.com/xenncam/easyphotoshare\nReleased under the Apache License, Version 2.0\nhttp://www.apache.org/licenses/LICENSE-2.0"
+            android:text="EasyPhotoShare\nCopyright (C) 2019 xenn\nhttps://github.com/xenncamcos/easyphotoshare\nReleased under the Apache License, Version 2.0\nhttp://www.apache.org/licenses/LICENSE-2.0"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
         <TextView
@@ -104,7 +104,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:autoLink="web"
-            android:text="\@silverintegral\nhttps://twitter.com/silverintegral\nバグ報告や機能要望はDMにてご連絡下さい。"
+            android:text="\@xenncamcos\nhttps://twitter.com/xenncamcos\nバグ報告や機能要望はDMにてご連絡下さい。"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

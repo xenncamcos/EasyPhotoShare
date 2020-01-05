@@ -18,7 +18,6 @@
 package com.silverintegral.easyphotoshare;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -36,16 +35,12 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.provider.Settings;
-import android.provider.VoicemailContract;
 import android.text.method.LinkMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -55,20 +50,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URLDecoder;
 import java.util.Enumeration;
-import java.util.Random;
 
-import static android.os.FileUtils.closeQuietly;
 import static android.text.Html.TO_HTML_PARAGRAPH_LINES_INDIVIDUAL;
 import static android.text.Html.fromHtml;
-import static android.text.Html.toHtml;
 
 public class MainActivity extends AppCompatActivity {
 	private String TAG = "MainActivity";
@@ -241,7 +231,8 @@ public class MainActivity extends AppCompatActivity {
 		if (m_sv_run && !m_sv_ip.equals(getIPv4())) {
 			stopService();
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setMessage("IPアドレスが変更されています。\nサービスを終了します。")
+			builder.setTitle("IPアドレスエラー")
+					.setMessage("IPアドレスが変更されています。\nサービスを終了します。")
 					.setPositiveButton("確認", new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int id) {
 							refreshUI();
@@ -348,7 +339,6 @@ public class MainActivity extends AppCompatActivity {
 				}
 
 
-
 				// 設定を保存
 				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 				SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -374,20 +364,35 @@ public class MainActivity extends AppCompatActivity {
 		finish();
 	}
 
-	private void startService() {
+	private void startService() { startService_in(false); }
+	private void startServiceWifi() { startService_in(true); }
+	private void startService_in(Boolean forceWifi) {
 		if (m_sv_run)
 			return;
 
-		//getWifiState();
-		//getApState();
-
 		m_sv_ip = getIPv4();
 
-		if (m_sv_ip == null || getWifiState()) {
+		if (m_sv_ip != null && getWifiState()) {
+			if (!forceWifi) {
+				new AlertDialog.Builder(this).setCancelable(false)
+						.setTitle("Wi-Fiネットワークの検出")
+						.setMessage("同じWi-Fiネットワークに存在するクライアントからのみ閲覧が可能です。\n"
+								+ "またパブリックネットワークの場合は第三者が容易に傍受可能です。")
+						.setPositiveButton("Wi-Fi接続で開始", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+								startServiceWifi();
+							}
+						})
+						.setNegativeButton("閉じる", null)
+						.create().show();
+
+				return;
+			}
+		} else if (m_sv_ip == null) {
 			new AlertDialog.Builder(this).setCancelable(false)
-					.setTitle("IPアドレス")
+					.setTitle("IPアドレスが見つかりません")
 					.setMessage("利用可能なIPアドレスが存在しません。\nテザリングが有効か確認をして下さい。")
-					.setPositiveButton("設定する", new DialogInterface.OnClickListener() {
+					.setPositiveButton("設定画面の表示", new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int id) {
 							startActivity(new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS));
 						}
@@ -398,12 +403,13 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		}
 
+		// 実行IPの保存
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.putString("SV_IP", m_sv_ip);
 		editor.apply();
 
-
+		// サービスの開始
 		Intent serviceIntent = new Intent(getApplication(), MainService.class);
 		serviceIntent.putExtra("SV_IP", m_sv_ip);
 		serviceIntent.putExtra("SV_PORT", m_sv_port);
@@ -413,8 +419,6 @@ public class MainActivity extends AppCompatActivity {
 		serviceIntent.putExtra("SV_AUTOKILL", m_sv_autokilll);
 		serviceIntent.putExtra("SV_MAXCACHE", m_sv_maxcache);
 		serviceIntent.putExtra("SV_DELCACHE", m_sv_delcache);
-
-
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			startForegroundService(serviceIntent);
@@ -433,6 +437,7 @@ public class MainActivity extends AppCompatActivity {
 		Intent serviceIntent = new Intent(getApplication(), MainService.class);
 		stopService(serviceIntent);
 
+		// 実行IPの削除
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.putString("SV_IP", "");
@@ -571,8 +576,6 @@ public class MainActivity extends AppCompatActivity {
 				continue;
 			}
 
-			//Toast.makeText(MainActivity.this, netname, Toast.LENGTH_LONG).show();
-
 			Enumeration<InetAddress> addresses = net_face.getInetAddresses();
 
 			while (addresses.hasMoreElements()) {
@@ -649,11 +652,6 @@ public class MainActivity extends AppCompatActivity {
 
 
 	/*
-	private boolean getWifiState() {
-		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		return mWifiManager.isWifiEnabled();
-	}
-
 	private boolean setWifiState(boolean state) {
 		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		if (mWifiManager.setWifiEnabled(state)) {

@@ -1024,6 +1024,7 @@ public class MainService extends Service {
 			return s_index.getBytes();
 		}
 
+		// TODO: 破損用ファイルを返す
 		public byte[] getImage(String name) {
 			try {
 				// 存在確認とDocID取得
@@ -1085,6 +1086,7 @@ public class MainService extends Service {
 			return null;
 		}
 
+		// TODO: 破損用ファイルを返す
 		public byte[] getImage_s(String name) {
 			if (s_images.get(name) == null)
 				return null;
@@ -1092,7 +1094,7 @@ public class MainService extends Service {
 			try {
 				File t = new File(getExternalFilesDir(null) , s_cachedir + name + ".s");
 				if (!t.exists()) {
-					if (createThumbsRetry(name))
+					if (createThumbsRetry(name + ".s"))
 						return getImage_s(name);
 					else
 						return null;
@@ -1123,6 +1125,7 @@ public class MainService extends Service {
 			}
 		}
 
+		// TODO: 破損用ファイルを返す
 		public byte[] getImage_m(String name) {
 			if (s_images.get(name) == null)
 				return null;
@@ -1130,7 +1133,7 @@ public class MainService extends Service {
 			try {
 				File t = new File(getExternalFilesDir(null) , s_cachedir + name + ".m");
 				if (!t.exists()) {
-					if (createThumbsRetry(name))
+					if (createThumbsRetry(name + ".m"))
 						return getImage_m(name);
 					else
 						return null;
@@ -1180,7 +1183,7 @@ public class MainService extends Service {
 					return false;
 				}
 
-				re = new File(getExternalFilesDir(null) , s_cachedir + name + ".s");
+				re = new File(getExternalFilesDir(null) , s_cachedir + name);
 				if (re.exists())
 					return true;
 			}
@@ -1234,149 +1237,165 @@ public class MainService extends Service {
 			}
 
 
+			ParcelFileDescriptor parcelFileDescriptor = null;
+			FileDescriptor fileDescriptor = null;
+
 			try {
-				ParcelFileDescriptor parcelFileDescriptor = null;
-				FileDescriptor fileDescriptor = null;
-
+				parcelFileDescriptor = getContentResolver().openFileDescriptor(docUri, "r");
+				fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
 				try {
-					parcelFileDescriptor = getContentResolver().openFileDescriptor(docUri, "r");
-					fileDescriptor = parcelFileDescriptor.getFileDescriptor();
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
+					file_t.delete();
 					parcelFileDescriptor.close();
-					return;
+				} catch (IOException ex) {
 				}
-
-				// サムネイル作成
-				Bitmap srcImg = BitmapFactory.decodeFileDescriptor(fileDescriptor);
-				if (srcImg == null) {
-					parcelFileDescriptor.close();
-					return;
-				}
-
-
-				ExifInterface exif = new ExifInterface(fileDescriptor);
-				int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-
-				if (orientation == ExifInterface.ORIENTATION_ROTATE_90)
-					orientation = 90;
-				else if (orientation == ExifInterface.ORIENTATION_ROTATE_180)
-					orientation = 180;
-				else if (orientation == ExifInterface.ORIENTATION_ROTATE_270)
-					orientation = 270;
-				else
-					orientation = 0;
-
-				if (orientation != 0) {
-					Matrix matrix = new Matrix();
-					matrix.postRotate(orientation);
-					srcImg = Bitmap.createBitmap(srcImg, 0, 0, srcImg.getWidth(), srcImg.getHeight(), matrix, true);
-				}
-
-
-				float src_w = srcImg.getWidth();
-				float src_h = srcImg.getHeight();
-				float dst_x;
-				float dst_y;
-				float dst_w;
-				float dst_h;
-
-				Bitmap dstImg = null;
-				Canvas dstCv = null;
-
-				Paint p = new Paint();
-				p.setAntiAlias(true);
-
-				// Sサムネイルのサイズを計算
-				if (src_w / IMAGE_MAX_SIZE_S > src_h / IMAGE_MAX_SIZE_S) {
-					dst_w = IMAGE_MAX_SIZE_S;
-					dst_h = IMAGE_MAX_SIZE_S / src_w * src_h;
-					dst_x = 0;
-					dst_y = (IMAGE_MAX_SIZE_S - dst_h) / 2;
-				} else {
-					dst_h = IMAGE_MAX_SIZE_S;
-					dst_w = IMAGE_MAX_SIZE_S / src_h * src_w;
-					dst_x = (IMAGE_MAX_SIZE_S - dst_w) / 2;
-					dst_y = 0;
-				}
-
-				// Sサムネイルの作成と保存
-				dstImg = Bitmap.createBitmap(IMAGE_MAX_SIZE_S, IMAGE_MAX_SIZE_S, Bitmap.Config.ARGB_8888);
-				dstCv = new Canvas(dstImg);
-				dstCv.drawBitmap(srcImg, new Rect(0,0, (int)src_w, (int)src_h), new Rect((int)dst_x, (int)dst_y,(int)(dst_x + dst_w),(int)(dst_y + dst_h)), p);
-
-				File file_s = new File(getExternalFilesDir(null) , s_cachedir + name + ".s");
-				if (file_s.exists()) {
-					file_s.delete();
-				}
-
-				try {
-					file_s.createNewFile();
-					FileOutputStream fOut = new FileOutputStream(file_s);
-					dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
-
-					fOut.flush();
-					fOut.close();
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-					file_t.delete();
-					return;
-				} catch (IOException e) {
-					e.printStackTrace();
-					file_t.delete();
-					file_s.delete();
-					return;
-				}
-
-
-				// Mサムネイルのサイズを計算
-				if (src_w <= IMAGE_MAX_SIZE_M && src_h <= IMAGE_MAX_SIZE_M ) {
-					dst_w = src_w;
-					dst_h = src_h;
-				} else {
-					if (src_w / IMAGE_MAX_SIZE_M > src_h / IMAGE_MAX_SIZE_M) {
-						dst_w = IMAGE_MAX_SIZE_M;
-						dst_h = IMAGE_MAX_SIZE_M / src_w * src_h;
-					} else {
-						dst_h = IMAGE_MAX_SIZE_M;
-						dst_w = IMAGE_MAX_SIZE_M / src_h * src_w;
-					}
-				}
-
-				// Mサムネイルの作成と保存
-				dstImg = Bitmap.createBitmap((int)dst_w, (int)dst_h, Bitmap.Config.ARGB_8888);
-				dstCv = new Canvas(dstImg);
-				dstCv.drawBitmap(srcImg, new Rect(0,0, (int)src_w, (int)src_h), new Rect(0, 0,(int)dst_w,(int)dst_h), p);
-
-				File file_m = new File(getExternalFilesDir(null) , s_cachedir + name + ".m");
-				if (file_m.exists()) {
-					file_m.delete();
-				}
-
-				try {
-					file_m.createNewFile();
-					FileOutputStream fOut = new FileOutputStream(file_m);
-					dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
-
-					fOut.flush();
-					fOut.close();
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-					file_t.delete();
-					file_m.delete();
-					return;
-				} catch (IOException e) {
-					e.printStackTrace();
-					file_t.delete();
-					file_m.delete();
-					file_s.delete();
-					return;
-				}
-
-				parcelFileDescriptor.close();
-			} catch (IOException ex) {
-				ex.printStackTrace();
 				return;
+			}
+
+			// サムネイル作成
+			Bitmap srcImg = BitmapFactory.decodeFileDescriptor(fileDescriptor);
+			if (srcImg == null) {
+				try {
+					file_t.delete();
+					parcelFileDescriptor.close();
+				} catch (IOException e) {
+				}
+				return;
+			}
+
+
+			ExifInterface exif = null;
+			try {
+				exif = new ExifInterface(fileDescriptor);
+			} catch (IOException e) {
+				e.printStackTrace();
+				file_t.delete();
+				return;
+			}
+			int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+
+			if (orientation == ExifInterface.ORIENTATION_ROTATE_90)
+				orientation = 90;
+			else if (orientation == ExifInterface.ORIENTATION_ROTATE_180)
+				orientation = 180;
+			else if (orientation == ExifInterface.ORIENTATION_ROTATE_270)
+				orientation = 270;
+			else
+				orientation = 0;
+
+			if (orientation != 0) {
+				Matrix matrix = new Matrix();
+				matrix.postRotate(orientation);
+				srcImg = Bitmap.createBitmap(srcImg, 0, 0, srcImg.getWidth(), srcImg.getHeight(), matrix, true);
+			}
+
+
+			float src_w = srcImg.getWidth();
+			float src_h = srcImg.getHeight();
+			float dst_x;
+			float dst_y;
+			float dst_w;
+			float dst_h;
+
+			Bitmap dstImg = null;
+			Canvas dstCv = null;
+
+			Paint p = new Paint();
+			p.setAntiAlias(true);
+
+			// Sサムネイルのサイズを計算
+			if (src_w / IMAGE_MAX_SIZE_S > src_h / IMAGE_MAX_SIZE_S) {
+				dst_w = IMAGE_MAX_SIZE_S;
+				dst_h = IMAGE_MAX_SIZE_S / src_w * src_h;
+				dst_x = 0;
+				dst_y = (IMAGE_MAX_SIZE_S - dst_h) / 2;
+			} else {
+				dst_h = IMAGE_MAX_SIZE_S;
+				dst_w = IMAGE_MAX_SIZE_S / src_h * src_w;
+				dst_x = (IMAGE_MAX_SIZE_S - dst_w) / 2;
+				dst_y = 0;
+			}
+
+			// Sサムネイルの作成と保存
+			dstImg = Bitmap.createBitmap(IMAGE_MAX_SIZE_S, IMAGE_MAX_SIZE_S, Bitmap.Config.ARGB_8888);
+			dstCv = new Canvas(dstImg);
+			dstCv.drawBitmap(srcImg, new Rect(0,0, (int)src_w, (int)src_h), new Rect((int)dst_x, (int)dst_y,(int)(dst_x + dst_w),(int)(dst_y + dst_h)), p);
+
+			File file_s = new File(getExternalFilesDir(null) , s_cachedir + name + ".s");
+			if (file_s.exists()) {
+				file_s.delete();
+			}
+
+			try {
+				file_s.createNewFile();
+				FileOutputStream fOut = new FileOutputStream(file_s);
+				dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
+
+				fOut.flush();
+				fOut.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				file_t.delete();
+				file_s.delete();
+				return;
+			} catch (IOException e) {
+				e.printStackTrace();
+				file_t.delete();
+				file_s.delete();
+				return;
+			}
+
+
+			// Mサムネイルのサイズを計算
+			if (src_w <= IMAGE_MAX_SIZE_M && src_h <= IMAGE_MAX_SIZE_M ) {
+				dst_w = src_w;
+				dst_h = src_h;
+			} else {
+				if (src_w / IMAGE_MAX_SIZE_M > src_h / IMAGE_MAX_SIZE_M) {
+					dst_w = IMAGE_MAX_SIZE_M;
+					dst_h = IMAGE_MAX_SIZE_M / src_w * src_h;
+				} else {
+					dst_h = IMAGE_MAX_SIZE_M;
+					dst_w = IMAGE_MAX_SIZE_M / src_h * src_w;
+				}
+			}
+
+			// Mサムネイルの作成と保存
+			dstImg = Bitmap.createBitmap((int)dst_w, (int)dst_h, Bitmap.Config.ARGB_8888);
+			dstCv = new Canvas(dstImg);
+			dstCv.drawBitmap(srcImg, new Rect(0,0, (int)src_w, (int)src_h), new Rect(0, 0,(int)dst_w,(int)dst_h), p);
+
+			File file_m = new File(getExternalFilesDir(null) , s_cachedir + name + ".m");
+			if (file_m.exists()) {
+				file_m.delete();
+			}
+
+			try {
+				file_m.createNewFile();
+				FileOutputStream fOut = new FileOutputStream(file_m);
+				dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
+
+				fOut.flush();
+				fOut.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				file_t.delete();
+				file_s.delete();
+				file_m.delete();
+				return;
+			} catch (IOException e) {
+				e.printStackTrace();
+				file_t.delete();
+				file_s.delete();
+				file_m.delete();
+				return;
+			}
+
+			try {
+				parcelFileDescriptor.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
 
