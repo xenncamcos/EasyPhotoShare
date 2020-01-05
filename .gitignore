@@ -1,5 +1,5 @@
 # Built application files
-*.apk
+#*.apk
 *.ap_
 *.aab
 
@@ -69,5 +69,5 @@ lint/tmp/
 
 .idea/
 gradle/
-app/build
+app/build/
 app/libs/
