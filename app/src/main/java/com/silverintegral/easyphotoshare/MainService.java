@@ -431,14 +431,20 @@ public class MainService extends Service {
 			if (name.length() > 7 && name.startsWith("data/s/")) {
 				// サムネイルS
 				response = m_image.getImage_s(name.substring(7));
+				if (response == null)
+					response = getAssetFile("_err_s.jpg");
 				type = "image/jpeg";
 			} else if (name.length() > 7 && name.startsWith("data/m/")) {
 				// サムネイルM
 				response = m_image.getImage_m(name.substring(7));
+				if (response == null)
+					response = getAssetFile("_err_m.jpg");
 				type = "image/jpeg";
 			} else if (name.length() > 4 && name.startsWith("data/d/")) {
 				// スマホ内の画像データ（ダウンロード）
 				response = m_image.getImage(name.substring(7));
+				if (response == null)
+					response = getAssetFile("_err_m.jpg");
 
 				if (name.endsWith(".jpg") || name.endsWith(".jpeg"))
 					type = "image/jpeg";
