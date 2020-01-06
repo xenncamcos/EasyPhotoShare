@@ -18,7 +18,7 @@ WifiManager.LocalOnlyHotspot()で作成されたネットワークでは正し�
 
 ## 最新パッケージ
 1.0.5
-[apkファイル(./blob/master/app/release/)
+[apkファイル](./blob/master/app/release/){:target="_blank"}
 <br>
 
 ## サポート
