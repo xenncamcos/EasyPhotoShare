@@ -4,8 +4,11 @@
 テザリングでプライベートネットワークを作成してどこでも高速通信で共有が可能です。
 <br>
 
-## 共有に使うネットワークについて
-写真の共有にはインターネットに接続されたネットワークが必要です。
+## 最新パッケージ
+[Google Play](https://play.google.com/store/apps/details?id=com.silverintegral.easyphotoshare&hl=ja)
+<br>
+[GitHib](app/release/app-release.apk)
+<br>
 
 #### その１：テザリング（推奨）
 テザリングを行う事によって作成されるネットワークを利用します。
@@ -14,12 +17,6 @@
 #### その２：一般的なWi-Fi
 WANアクセス可能なルーターが存在している場合に限り動作します。
 WifiManager.LocalOnlyHotspot()で作成されたネットワークでは正しく動作しません。
-<br>
-
-
-## 最新パッケージ
-[Google Play](https://play.google.com/store/apps/details?id=com.silverintegral.easyphotoshare&hl=ja)
-[GitHib](app/release/app-release.apk)
 <br>
 
 ## サポート
