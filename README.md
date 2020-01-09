@@ -16,9 +16,13 @@ WANアクセス可能なルーターが存在している場合に限り動作�
 WifiManager.LocalOnlyHotspot()で作成されたネットワークでは正しく動作しません。
 <br>
 
+
 ## 最新パッケージ
-#### 1.0.5
+#### GitHib - 1.1.3
 [apkファイル](app/release/app-release.apk)
+
+#### Google Play - 1.1.3
+[apkファイル](https://play.google.com/store/apps/details?id=com.silverintegral.easyphotoshare&hl=ja)
 <br>
 
 ## サポート

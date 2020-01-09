@@ -38,19 +38,15 @@ import android.graphics.Rect;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.net.nsd.NsdManager;
-import android.net.nsd.NsdServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
-import android.provider.OpenableColumns;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
-import androidx.documentfile.provider.DocumentFile;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -73,11 +69,8 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
@@ -87,16 +80,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
-import static android.content.ContentValues.TAG;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -432,22 +420,24 @@ public class MainService extends Service {
 				// サムネイルS
 				response = m_image.getImage_s(name.substring(7));
 				if (response == null)
-					response = getAssetFile("_err_s.jpg");
+					response = getAssetFile("err_s.webp");
 				type = "image/jpeg";
 			} else if (name.length() > 7 && name.startsWith("data/m/")) {
 				// サムネイルM
 				response = m_image.getImage_m(name.substring(7));
 				if (response == null)
-					response = getAssetFile("_err_m.jpg");
+					response = getAssetFile("err_m.webp");
 				type = "image/jpeg";
 			} else if (name.length() > 4 && name.startsWith("data/d/")) {
 				// スマホ内の画像データ（ダウンロード）
 				response = m_image.getImage(name.substring(7));
 				if (response == null)
-					response = getAssetFile("_err_m.jpg");
+					response = getAssetFile("err_m.webp");
 
 				if (name.endsWith(".jpg") || name.endsWith(".jpeg"))
 					type = "image/jpeg";
+				else if (name.endsWith(".webp"))
+					type = "image/webp";
 				else if (name.endsWith(".png"))
 					type = "image/png";
 				else if (name.endsWith(".bmp"))
@@ -460,7 +450,7 @@ public class MainService extends Service {
 				// スマホ内の画像データ
 				response = m_image.getImage(name.substring(5));
 				if (response == null)
-					response = getAssetFile("_err_m.jpg");
+					response = getAssetFile("err_m.webp");
 
 				if (name.endsWith(".jpg") || name.endsWith(".jpeg"))
 					type = "image/jpeg";
@@ -546,7 +536,7 @@ public class MainService extends Service {
 		}
 
 		private String getRequestFileName(byte[] request) {
-			String head = null;
+			String head;
 
 			try {
 				head = new String(request,"UTF-8");
@@ -775,7 +765,7 @@ public class MainService extends Service {
 		private WatchService s_watcher = null;
 		private String s_index = null;
 		private TreeMap<String, String> s_images = null;
-		ArrayList<String> m_err_files = null;;
+		ArrayList<String> m_err_files;
 
 
 		public ImageService(String root_uri) {
@@ -833,9 +823,8 @@ public class MainService extends Service {
 		}
 
 		private void init() {
-			s_images = new TreeMap<String, String>();
+			s_images = new TreeMap<>();
 
-			// サムネイルの作成
 			ContentResolver contentResolver = getContentResolver();
 
 			Uri rootUri = Uri.parse(m_root_uri);
@@ -843,10 +832,10 @@ public class MainService extends Service {
 			Cursor files = contentResolver.query(childrenUri, SAF_IDX, null, null, null);
 
 			try {
-				String id = null;
-				String name = null;
-				String lname = null;
-				String mime = null;
+				String id;
+				String name;
+				String lname;
+				String mime;
 
 				while (files != null && files.moveToNext()) {
 					id = files.getString(SAF_ID);
@@ -854,7 +843,7 @@ public class MainService extends Service {
 					mime = files.getString(SAF_MIME);
 					lname = name.toLowerCase();
 
-					if (!DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+					if (id.length() > 0 && !DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
 						if (lname.endsWith(".jpg") || lname.endsWith(".jpeg") || lname.endsWith(".png") || lname.endsWith(".bmp")) {
 							s_images.put(name, id);
 
@@ -873,14 +862,12 @@ public class MainService extends Service {
 				}
 			}
 
-
 			// indexの作成
 			createIndex(s_images);
 
-
 			// 不要サムネイルの削除
 			try {
-				String name = null;
+				String name;
 				File[] cacheFiles = new File(getExternalFilesDir(null), s_cachedir).listFiles(new FilenameFilter() {
 					public boolean accept(File file, String str) {
 						return str.endsWith(".s") ? true : false;
@@ -896,7 +883,6 @@ public class MainService extends Service {
 								new File(getExternalFilesDir(null), s_cachedir + name + ".t").delete();
 								new File(getExternalFilesDir(null), s_cachedir + name + ".s").delete();
 								new File(getExternalFilesDir(null), s_cachedir + name + ".m").delete();
-
 							}
 						}
 					}
@@ -1027,7 +1013,7 @@ public class MainService extends Service {
 			names = names.substring(0, names.length() - 2) + "];</script>";
 
 			index_src = index_src.replace("<!--#CONTENT#-->", content + names);
-			s_index = index_src.replace("<!--#COUNT#-->", String.valueOf(images.size()) + "の画像");
+			s_index = index_src.replace("<!--#COUNT#-->", String.valueOf(images.size()) + "枚の画像");
 		}
 
 		// index.htmlを返す
@@ -1037,13 +1023,28 @@ public class MainService extends Service {
 
 		public byte[] getImage(String name) {
 			try {
+				if (m_err_files.indexOf(s_images.get(name)) != -1) {
+					// エラーファイルを返す
+					AssetManager assets = m_context.getAssets();
+					try (InputStream file = assets.open("html/err_m.webp")) {
+						BufferedInputStream bin = new BufferedInputStream(file);
+
+						byte[] data = new byte[1024 * 1024 * 100];
+						int readSize = bin.read(data, 0, 1024 * 1024 * 100);
+						data = Arrays.copyOf(data, readSize);
+
+						return data;
+					} catch (IOException e) {
+						e.printStackTrace();
+						return null;
+					}
+				}
+
 				// 存在確認とDocID取得
 				Uri docUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(s_root_uri), s_images.get(name));
 				Cursor c = getContentResolver().query(docUri, SAF_IDX, null, null, null, null);
 
 				if (c == null || !c.moveToFirst())
-					return null;
-				if (m_err_files.indexOf(name) != -1)
 					return null;
 
 				int datasize = Integer.parseInt(c.getString(SAF_SIZE));
@@ -1070,8 +1071,11 @@ public class MainService extends Service {
 					data = new byte[1024 * 1024 * 30];
 					int readSize = bin.read(data, 0, 1024 * 1024 * 30);
 
-						bin.close();
-						file.close();
+					bin.close();
+					file.close();
+
+					if (readSize == 0)
+						return null;
 				} else {
 					data = new byte[datasize];
 					int readSize = bin.read(data, 0, datasize);
@@ -1099,62 +1103,58 @@ public class MainService extends Service {
 		}
 
 		public byte[] getImage_s(String name) {
-			if (s_images.get(name) == null)
-				return null;
-			if (m_err_files.indexOf(name) != -1)
-				return null;
-
-			try {
-				File t = new File(getExternalFilesDir(null) , s_cachedir + name + ".s");
-				if (!t.exists()) {
-					if (createThumbsRetry(name + ".s"))
-						return getImage_s(name);
-					else
-						return null;
-				}
-
-				FileInputStream file = new FileInputStream(new File(getExternalFilesDir(null) , s_cachedir + name + ".s"));
-				BufferedInputStream bin = new BufferedInputStream(file);
-
-				int datasize = (int)t.length();
-
-				byte[] data = new byte[datasize];
-				int readSize = bin.read(data, 0, datasize);
-
-				if (readSize != datasize) {
-					bin.close();
-					file.close();
-					return null;
-				}
-
-				bin.close();
-				file.close();
-
-				return data;
-			} catch (IOException e) {
-				return null;
-			} catch (Exception e) {
-				return null;
-			}
+			return getImage_min(name, "s");
 		}
 
-		// TODO: 破損用ファイルを返す
 		public byte[] getImage_m(String name) {
-			if (s_images.get(name) == null)
+			return getImage_min(name, "m");
+		}
+
+		public byte[] getImage_min(String name, String type) {
+			if (s_images.get(name) == null) {
 				return null;
-			if (m_err_files.indexOf(name) != -1)
-				return null;
+			} else if (m_err_files.indexOf(s_images.get(name)) != -1) {
+				// エラーファイルを返す
+				AssetManager assets = m_context.getAssets();
+				try (InputStream file = assets.open("html/_err_" + type + ".webp")) {
+					BufferedInputStream bin = new BufferedInputStream(file);
+
+					byte[] data = new byte[1024 * 1024 * 100];
+					int readSize = bin.read(data, 0, 1024 * 1024 * 100);
+					data = Arrays.copyOf(data, readSize);
+
+					return data;
+				} catch (IOException e) {
+					e.printStackTrace();
+					return null;
+				}
+			}
 
 			try {
-				File t = new File(getExternalFilesDir(null) , s_cachedir + name + ".m");
+				File t = new File(getExternalFilesDir(null) , s_cachedir + name + "." + type);
 				if (!t.exists()) {
-					if (createThumbsRetry(name + ".m"))
-						return getImage_m(name);
-					else
+					Boolean is_exists = false;
+					// 作成を少しだけ待機する
+					for (int i = 0; i < 30; i++) {
+						try {
+							Thread.sleep(300);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+							return null;
+						}
+
+						t = new File(getExternalFilesDir(null) , s_cachedir + name + "." + type);
+						if (t.exists()) {
+							is_exists = true;
+							break;
+						}
+					}
+
+					if (!is_exists)
 						return null;
 				}
 
-				FileInputStream file = new FileInputStream(new File(getExternalFilesDir(null) , s_cachedir + name + ".m"));
+				FileInputStream file = new FileInputStream(new File(getExternalFilesDir(null) , s_cachedir + name + "." + type));
 				BufferedInputStream bin = new BufferedInputStream(file);
 
 				int datasize = (int)t.length();
@@ -1177,33 +1177,6 @@ public class MainService extends Service {
 			} catch (Exception e) {
 				return null;
 			}
-		}
-
-		private Boolean createThumbsRetry(String name) {
-			File re;
-
-			/*
-			File ts = new File(getExternalFilesDir(null) , s_cachedir + name + ".t");
-			if (ts.exists())
-				ts.delete();
-
-			//s_exec_worker.submit(new ImageWorker(s_images.get(name)));
-			 */
-
-			for (int i = 0; i < 30; i++) {
-				try {
-					Thread.sleep(300);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-					return false;
-				}
-
-				re = new File(getExternalFilesDir(null) , s_cachedir + name);
-				if (re.exists())
-					return true;
-			}
-
-			return false;
 		}
 
 		private void createThumbs(String docID) {
@@ -1222,6 +1195,10 @@ public class MainService extends Service {
 			String ts_old = null;
 			String name = c.getString(SAF_NAME);
 			c.close();
+
+			if (name.startsWith("jit_")) {
+				name = name.toString();
+			}
 
 			// タイムスタンプ
 			File file_t = new File(getExternalFilesDir(null) , s_cachedir + name + ".t");
@@ -1255,7 +1232,6 @@ public class MainService extends Service {
 				return;
 			}
 
-
 			ParcelFileDescriptor parcelFileDescriptor = null;
 			FileDescriptor fileDescriptor = null;
 
@@ -1280,13 +1256,14 @@ public class MainService extends Service {
 					file_t.delete();
 					parcelFileDescriptor.close();
 				} catch (IOException e) {
+					e.printStackTrace();
 				}
 				m_err_files.add(name);
 				return;
 			}
 
 
-			ExifInterface exif = null;
+			ExifInterface exif;
 			try {
 				exif = new ExifInterface(fileDescriptor);
 			} catch (IOException e) {
@@ -1311,7 +1288,6 @@ public class MainService extends Service {
 				matrix.postRotate(orientation);
 				srcImg = Bitmap.createBitmap(srcImg, 0, 0, srcImg.getWidth(), srcImg.getHeight(), matrix, true);
 			}
-
 
 			float src_w = srcImg.getWidth();
 			float src_h = srcImg.getHeight();
