@@ -18,11 +18,8 @@ WifiManager.LocalOnlyHotspot()で作成されたネットワークでは正し�
 
 
 ## 最新パッケージ
-#### GitHib - 1.1.3
-[apkファイル](app/release/app-release.apk)
-
-#### Google Play - 1.1.3
-[apkファイル](https://play.google.com/store/apps/details?id=com.silverintegral.easyphotoshare&hl=ja)
+[Google Play](https://play.google.com/store/apps/details?id=com.silverintegral.easyphotoshare&hl=ja)
+[GitHib](app/release/app-release.apk)
 <br>
 
 ## サポート
