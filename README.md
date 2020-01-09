@@ -18,7 +18,7 @@ WifiManager.LocalOnlyHotspot()で作成されたネットワークでは正し�
 
 ## 最新パッケージ
 #### 1.0.5
-[apkファイル](/xenncamcos/EasyPhotoShare/blob/master/app/release/app-release.apk)
+[apkファイル](app/release/app-release.apk)
 <br>
 
 ## サポート
