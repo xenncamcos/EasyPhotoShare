@@ -2,11 +2,11 @@
     <string name="app_name">EasyPhotoShare</string>
     <string name="title_activity_main">EasyPhotoShare</string>
     <string name="title_activity_qr">QR Code</string>
-    <string name="title_activity_settings">設定</string>
+    <string name="title_activity_settings">高度な設定</string>
 
-    <string name="menu_main_setting">設定</string>
+    <string name="menu_main_setting">高度な設定</string>
     <string name="menu_main_license">ライセンス</string>
-    <string name="menu_main_exit">終了</string>
+    <string name="menu_main_exit">アプリの終了</string>
 
     <string name="set_server_header">サーバー設定</string>
     <string name="set_server_keepalive">HTTPキープアライブ</string>

@@ -1,7 +1,6 @@
 if (navigator.userAgent.toLowerCase().indexOf(' line/') > -1) {
 	if (navigator.userAgent.indexOf('Android') > -1) {
-		location.replace('intent://' + location.hostname + location.pathname
-			+ '#Intent;scheme=' + location.protocol.replace(':', '') + ';package=com.android.chrome;end');
+		location.replace('intent://' + location.host + '#Intent;scheme=' + location.protocol.replace(':', '') + ';package=com.android.chrome;end');
 	//} else {
 	//	location.replace(location.origin + location.pathname.replace(new RegExp("(?:\\\/+[^\\\/]*){0,1}$"), "/") + data['path']);
 	}

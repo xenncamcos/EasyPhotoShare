@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 silverintegral@xenncam
+ * Copyright 2019 silverintegral, xenncam
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,14 +89,13 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
-import static java.security.MessageDigest.getInstance;
 
 
 public class MainService extends Service {
 	private final String HTTP_SERVER_NAME = "EPSS/1.0";
-	private final int HTTP_MAX_REQUEST_CONNECTION = 10; // クライアントの最大接続数
+	private final int HTTP_MAX_REQUEST_CONNECTION = 4; // クライアントの最大接続数
 	private final int HTTP_MAX_REQUEST_SIZE = 2048; // リクエストデータの最大サイズ
-	private final int IMAGE_MAX_REQUEST_CONVERT = 6; // 同時画像最適化数
+	private final int IMAGE_MAX_REQUEST_CONVERT = 8; // 同時画像最適化数
 	private final int IMAGE_MAX_SIZE_S = 300;
 	private final int IMAGE_MAX_SIZE_M = 2000;
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 silverintegral@xenncam
+ * Copyright 2019 silverintegral, xenncam
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-
 package com.silverintegral.easyphotoshare;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -35,9 +35,11 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.provider.Settings;
@@ -68,6 +70,9 @@ public class MainActivity extends AppCompatActivity {
 	private static final int REQUEST_TARGETDIR = 11;
 	private static final int REQUEST_QRCODEEDIT = 12;
 	private static final int REQUEST_PERMISSION_STORAGE = 21;
+	private static final int REQUEST_PERMISSION_NETWORK = 22;
+
+	private int m_app_qr_alert_not_agein = 0;
 
 	private String m_sv_ip = "";
 	private Integer m_sv_port = 0;
@@ -81,9 +86,12 @@ public class MainActivity extends AppCompatActivity {
 
 	private Boolean m_sv_run = false;
 	private Boolean m_pem_storage = false;
+	private Boolean m_pem_network = false;
 
 	private String m_ap_ssid = "";
 	private String m_ap_pass = "";
+	private Boolean m_ap_hotspot = true;
+	private WifiManager.LocalOnlyHotspotReservation m_ap_state = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -110,9 +118,14 @@ public class MainActivity extends AppCompatActivity {
 		m_sv_delcache = sharedPreferences.getBoolean("SV_DELCACHE", false);
 		m_ap_ssid = sharedPreferences.getString("AP_SSID", "");
 		m_ap_pass = sharedPreferences.getString("AP_PASS", "");
+		m_ap_hotspot = sharedPreferences.getBoolean("AP_HOTSPOT", false);
+
 
 		// 不正な設定の修正
 		SharedPreferences.Editor editor = sharedPreferences.edit();
+
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+			m_ap_hotspot = false;
 
 		// ポート確認
 		if (m_sv_port < 1024 || m_sv_port > 65535) {
@@ -281,20 +294,15 @@ public class MainActivity extends AppCompatActivity {
 
 		try {
 			if (requestCode == REQUEST_QRCODEEDIT) {
-				Bundle bundle = data.getExtras();
-				String ssid = bundle.getString("AP_SSID", "");
-				String pass = bundle.getString("AP_PASS", "");
+				//Bundle bundle = data.getExtras();
+				m_ap_ssid = data.getStringExtra("AP_SSID");
+				m_ap_pass = data.getStringExtra("AP_PASS");
 
-				if (!ssid.equals(m_ap_ssid) || !pass.equals(m_ap_pass)) {
-					m_ap_ssid = ssid;
-					m_ap_pass = pass;
-
-					SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-					SharedPreferences.Editor editor = sharedPreferences.edit();
-					editor.putString("AP_SSID", ssid);
-					editor.putString("AP_PASS", pass);
-					editor.apply();
-				}
+				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+				SharedPreferences.Editor editor = sharedPreferences.edit();
+				editor.putString("AP_SSID", m_ap_ssid);
+				editor.putString("AP_PASS", m_ap_pass);
+				editor.apply();
 			} else if (requestCode == REQUEST_TARGETDIR) {
 				Uri rootUri = data.getData();
 
@@ -338,7 +346,6 @@ public class MainActivity extends AppCompatActivity {
 					builder.show();
 				}
 
-
 				// 設定を保存
 				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 				SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -372,26 +379,39 @@ public class MainActivity extends AppCompatActivity {
 
 		m_sv_ip = getIPv4();
 
-		if (m_sv_ip != null && getWifiState()) {
-			if (!forceWifi) {
-				new AlertDialog.Builder(this).setCancelable(false)
-						.setTitle("Wi-Fiネットワークの検出")
-						.setMessage("同じWi-Fiネットワークに存在するクライアントからのみ閲覧が可能です。\n"
-								+ "またパブリックネットワークの場合は第三者が容易に傍受可能です。")
-						.setPositiveButton("Wi-Fi接続で開始", new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int id) {
-								startServiceWifi();
-							}
-						})
-						.setNegativeButton("閉じる", null)
-						.create().show();
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			if (m_ap_hotspot) {
+				if (m_sv_ip == null) {
+					new AlertDialog.Builder(this).setCancelable(false)
+							.setMessage("ホットスポットを作成しますか？")
+							.setPositiveButton("作成する", new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog, int id) {
+									testPermission_network();
+									if (m_pem_network) {
+										startAp();
+
+										if (waitActiveIP()) {
+											startService_in(true);
+										} else {
+											Toast.makeText(MainActivity.this, "作成に失敗しました",Toast.LENGTH_LONG ).show();
+										}
+									}
+								}
+							})
+							.setNegativeButton("いいえ", null)
+							.create().show();
+				}
 
 				return;
 			}
-		} else if (m_sv_ip == null) {
+		}
+
+
+		if (m_sv_ip == null) {
 			new AlertDialog.Builder(this).setCancelable(false)
 					.setTitle("IPアドレスが見つかりません")
-					.setMessage("利用可能なIPアドレスが存在しません。\nテザリングが有効か確認をして下さい。")
+					.setMessage("利用可能なIPアドレスが存在しません。\nネットワークを確認して下さい。")
 					.setPositiveButton("設定画面の表示", new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int id) {
 							startActivity(new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS));
@@ -401,7 +421,22 @@ public class MainActivity extends AppCompatActivity {
 					.create().show();
 
 			return;
+		} else if (getWifiState() && !forceWifi) {
+			new AlertDialog.Builder(this).setCancelable(false)
+					.setTitle("Wi-Fiネットワークの検出")
+					.setMessage("同じWi-Fiネットワークに存在するクライアントからのみ閲覧が可能です。\n"
+							+ "またパブリックネットワークの場合は第三者が容易に傍受可能です。")
+					.setPositiveButton("Wi-Fi接続で開始", new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int id) {
+							startServiceWifi();
+						}
+					})
+					.setNegativeButton("閉じる", null)
+					.create().show();
+
+			return;
 		}
+
 
 		// 実行IPの保存
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -443,6 +478,9 @@ public class MainActivity extends AppCompatActivity {
 		editor.putString("SV_IP", "");
 		editor.apply();
 
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+			stopAp();
+
 		m_sv_run = false;
 		refreshUI();
 	}
@@ -467,7 +505,7 @@ public class MainActivity extends AppCompatActivity {
 			else
 				port = ":" + port;
 
-			String html = "<b>サービス実行中</b><br>"
+			String html = "<b>サービス実行中</b><br><br>"
 					+ "<b>URL:</b> <a href=\"http://" + m_sv_ip + ":8088\">http://" + m_sv_ip + port + "</a><br>"
 			+ "<b>PATH:</b> " + m_sv_root_disp;
 
@@ -498,14 +536,60 @@ public class MainActivity extends AppCompatActivity {
 		Intent intent = new Intent(this, QrActivity.class);
 		intent.putExtra("HOST_IP", m_sv_ip);
 		intent.putExtra("HOST_PORT", m_sv_port);
-		intent.putExtra("HOST_NAME", m_sv_name);
 		intent.putExtra("AP_SSID", m_ap_ssid);
 		intent.putExtra("AP_PASS", m_ap_pass);
+		intent.putExtra("AP_HOTSPOT", m_ap_hotspot);
 		startActivityForResult(intent, REQUEST_QRCODEEDIT);
 	}
 
-	private Boolean waitActiveIP(int timeout_sec) {
-		long maxtime = System.currentTimeMillis() + timeout_sec * 1000;
+	@RequiresApi(api = Build.VERSION_CODES.O)
+	private void startAp() {
+		WifiManager manager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+		if (manager == null) {
+			return;
+		}
+
+		manager.startLocalOnlyHotspot(new WifiManager.LocalOnlyHotspotCallback() {
+			@Override
+			public void onStarted(WifiManager.LocalOnlyHotspotReservation reservation) {
+				super.onStarted(reservation);
+				m_ap_state = reservation;
+				WifiConfiguration conf = m_ap_state.getWifiConfiguration();
+				m_ap_ssid = conf.SSID;
+				m_ap_pass = conf.preSharedKey;
+			}
+
+			@Override
+			public void onStopped() {
+				super.onStopped();
+				m_ap_state = null;
+			}
+
+			@Override
+			public void onFailed(int reason) {
+				super.onFailed(reason);
+				m_ap_state = null;
+			}
+		}, new Handler());
+	}
+
+
+	@RequiresApi(api = Build.VERSION_CODES.O)
+	private void stopAp() {
+		m_ap_ssid = null;
+		m_ap_pass = null;
+
+		try {
+			if (m_ap_state != null) {
+				m_ap_state.close();
+			}
+		} catch (Exception ignored) {
+		}
+	}
+
+
+	private Boolean waitActiveIP() {
+		long maxtime = System.currentTimeMillis() + 5000;
 
 		while (true) {
 			try {
@@ -522,6 +606,8 @@ public class MainActivity extends AppCompatActivity {
 				return false;
 		}
 	}
+
+
 
 	// 現在アクティブなネットワークの種別を取得
 	private String getNetwork() {
@@ -570,8 +656,8 @@ public class MainActivity extends AppCompatActivity {
 
 			// 無効なインターフェスをスキップ
 			String netname = net_face.getName();
-			if (netname.indexOf("bridge") != -1 || netname.indexOf("p2p") != -1
-					|| netname.indexOf("rmnet_") != -1 || netname.indexOf("dummy") != -1
+			if (netname.contains("bridge") || netname.contains("p2p")
+					|| netname.contains("rmnet_") || netname.contains("dummy")
 					|| netname.equals("lo")) {
 				continue;
 			}
@@ -591,7 +677,7 @@ public class MainActivity extends AppCompatActivity {
 		return null;
 	}
 
-	// 権限確認
+	// ストレージの権限確認
 	private void testPermission_storage() {
 		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
 				== PackageManager.PERMISSION_GRANTED) {
@@ -611,6 +697,30 @@ public class MainActivity extends AppCompatActivity {
 				// 再度要求をしても大丈夫
 				ActivityCompat.requestPermissions(this,
 						new String[] {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_PERMISSION_STORAGE);
+			}
+		}
+	}
+
+	// ネットワークの権限確認
+	private void testPermission_network() {
+		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CHANGE_WIFI_STATE)
+				== PackageManager.PERMISSION_GRANTED) {
+
+			// 既に許可がされていた
+			m_pem_network = true;
+		} else {
+			// 未確認なので許可を得る
+			m_pem_network = false;
+
+			// チェック
+			ActivityCompat.requestPermissions(this,
+					new String[] {Manifest.permission.CHANGE_NETWORK_STATE, Manifest.permission.CHANGE_WIFI_STATE}, REQUEST_PERMISSION_NETWORK);
+
+			if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+					Manifest.permission.CHANGE_WIFI_STATE)) {
+				// 再度要求をしても大丈夫
+				ActivityCompat.requestPermissions(this,
+						new String[] {Manifest.permission.ACCESS_WIFI_STATE, Manifest.permission.CHANGE_WIFI_STATE}, REQUEST_PERMISSION_NETWORK);
 			}
 		}
 	}
@@ -642,10 +752,24 @@ public class MainActivity extends AppCompatActivity {
 								Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse(uriString));
 								startActivity(intent);
 								finish();
-								return;
 							}
 						});
 				builder.show();
+			}
+		} else if (requestCode == REQUEST_PERMISSION_NETWORK) {
+			if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+				m_pem_network = true;
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+					startAp();
+					if (waitActiveIP()) {
+						startServiceWifi();
+					} else {
+						Toast.makeText(MainActivity.this, "作成に失敗しました",Toast.LENGTH_LONG ).show();
+					}
+				}
+			} else {
+				m_pem_network = false;
+				Toast.makeText(MainActivity.this, "作成に必要な権限がありません",Toast.LENGTH_LONG ).show();
 			}
 		}
 	}

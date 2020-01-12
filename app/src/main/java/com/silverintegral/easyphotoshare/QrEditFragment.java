@@ -1,3 +1,19 @@
+/**
+ * Copyright 2019 silverintegral, xenncam
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.silverintegral.easyphotoshare;
 
 import android.app.Activity;
@@ -17,15 +33,19 @@ import android.widget.EditText;
 
 
 public class QrEditFragment extends Fragment {
-	private View m_activity_qr_view = null;
+	/* private View m_activity_qr_view = null;
 	private View m_fragment_qr_view = null;
-	private View m_fragment_qr_edit = null;
+	private View m_fragment_qr_edit = null; */
+
 	private QrActivity m_parentActivity = null;
 
 	private OnFragmentInteractionListener mListener;
 
 	private String m_ssid = "";
 	private String m_pass = "";
+
+	EditText m_edit_ssid = null;
+	EditText m_edit_pass = null;
 
 
 	public QrEditFragment(QrActivity parent) {
@@ -47,9 +67,13 @@ public class QrEditFragment extends Fragment {
 							 Bundle savedInstanceState) {
 		//super.onCreateView(inflater, container, savedInstanceState);
 
+		/*
 		m_activity_qr_view = inflater.inflate(R.layout.activity_qr, null);
 		m_fragment_qr_view = inflater.inflate(R.layout.fragment_qr_view, null);
 		m_fragment_qr_edit = inflater.inflate(R.layout.fragment_qr_edit, null);
+		 */
+
+
 
 		return inflater.inflate(R.layout.fragment_qr_edit, container, false);
 	}
@@ -58,24 +82,16 @@ public class QrEditFragment extends Fragment {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
-		EditText ssid = getActivity().findViewById(R.id.qr_ssid);
-		ssid.setText(m_ssid);
-		EditText pass = getActivity().findViewById(R.id.qr_pass);
-		pass.setText(m_pass);
+		m_edit_ssid = m_parentActivity.findViewById(R.id.qr_ssid);
+		m_edit_ssid.setText(m_ssid);
+		m_edit_pass = m_parentActivity.findViewById(R.id.qr_pass);
+		m_edit_pass.setText(m_pass);
 	}
 
 
 	@Override
 	public void onPause() {
 		super.onPause();
-
-		EditText ssid = getActivity().findViewById(R.id.qr_ssid);
-		EditText pass = getActivity().findViewById(R.id.qr_pass);
-
-		m_ssid = ssid.getText().toString();
-		m_pass = pass.getText().toString();
-
-		m_parentActivity.setWifiInfo(m_ssid, m_pass);
 	}
 
 	@Override

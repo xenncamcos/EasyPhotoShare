@@ -1,22 +1,40 @@
+/**
+ * Copyright 2019 silverintegral, xenncam
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.silverintegral.easyphotoshare;
 
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.zxing.BarcodeFormat;
-import com.journeyapps.barcodescanner.BarcodeEncoder;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.preference.PreferenceManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ImageView;
 
 public class QrActivity extends AppCompatActivity
 		implements
@@ -30,13 +48,15 @@ public class QrActivity extends AppCompatActivity
 	private int m_port = 0;
 	private String m_ssid = null;
 	private String m_pass = null;
-	private String m_name = null;
-
+	private Boolean m_hotspot = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_qr);
+
+		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		Boolean app_qr_alert_not_again = sharedPreferences.getBoolean("APP_QR_ALERT_NOT_AGAIN", false);
 
 		m_view_fragment = new QrViewFragment(this);
 		Bundle bundle_view = new Bundle();
@@ -49,24 +69,52 @@ public class QrActivity extends AppCompatActivity
 		if (bundle != null) {
 			m_ip = bundle.getString("HOST_IP", "");
 			m_port = bundle.getInt("HOST_PORT", 0);
-			m_name = bundle.getString("HOST_NAME", "");
 			m_ssid = bundle.getString("AP_SSID", "");
 			m_pass = bundle.getString("AP_PASS", "");
+			m_hotspot = bundle.getBoolean("AP_HOTSPOT", false);
+
+			if (m_port == 0)
+				m_port = 8088;
 
 			bundle_view.putString("HOST_IP", m_ip);
 			bundle_view.putInt("HOST_PORT", m_port);
-			bundle_view.putString("HOST_NAME", m_name);
 			bundle_view.putString("AP_SSID", m_ssid);
 			bundle_view.putString("AP_PASS", m_pass);
 
 			bundle_edit.putString("AP_SSID", m_ssid);
 			bundle_edit.putString("AP_PASS", m_pass);
+
+			if (m_ssid.length() == 0 && !app_qr_alert_not_again && !m_hotspot) {
+				AlertDialog.Builder builder = new AlertDialog.Builder(this);
+				builder.setMessage("下のメニューからQRの設定を行うとテザリングやWi-Fiへの接続情報もQRコードにできます。")
+						.setPositiveButton("確認", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+								//return;
+							}
+						})
+						.setNegativeButton("次回から表示しない", new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+								SharedPreferences.Editor editor = sharedPreferences.edit();
+								editor.putBoolean("APP_QR_ALERT_NOT_AGAIN", true);
+								editor.remove("");
+								editor.apply();
+							}
+						})
+						.show();
+			}
 		}
+
+		// ホットスポットの場合は自分で編集できない
+		if (m_hotspot)
+			findViewById(R.id.qr_nav).setVisibility(View.INVISIBLE);
+		else
+			findViewById(R.id.qr_nav).setVisibility(View.VISIBLE);
+
 
 		m_view_fragment.setArguments(bundle_view);
 		m_edit_fragment.setArguments(bundle_edit);
-
-
 
 		// 初期表示
 		FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -93,52 +141,6 @@ public class QrActivity extends AppCompatActivity
 				return false;
 			}
 		});
-
-		/*
-		String barcodeApn = null;
-		String barcodeUrl = null;
-
-		if (m_ip.length() > 0) {
-			// URL
-			barcodeUrl = "http://" + m_ip + ":" + m_port;
-		}
-		if (m_ssid.length() > 0) {
-			// APN
-			barcodeApn = "WIFI:T:WPA;S:" + m_ssid + ";P:" + m_pass + ";;";
-		}
-
-		//FragmentTransaction transaction_edit = m_edit_fragment.getFragmentManager().beginTransaction();
-
-		try {
-			BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
-
-			if (barcodeUrl != null) {
-				Bitmap bitmap1 = barcodeEncoder.encodeBitmap(barcodeUrl, BarcodeFormat.QR_CODE, 1000, 1000);
-				ImageView imageQr1 = (ImageView)findViewById(R.id.qr_1);
-				imageQr1.setImageBitmap(bitmap1);
-				findViewById(R.id.txt_1).setVisibility(View.VISIBLE);
-				findViewById(R.id.qr_1).setVisibility(View.VISIBLE);
-			} else {
-				findViewById(R.id.txt_1).setVisibility(View.INVISIBLE);
-				findViewById(R.id.qr_1).setVisibility(View.INVISIBLE);
-			}
-
-			if (barcodeApn != null) {
-				Bitmap bitmap2 = barcodeEncoder.encodeBitmap(barcodeApn, BarcodeFormat.QR_CODE, 1000, 1000);
-				ImageView imageQr2 = findViewById(R.id.qr_2);
-				imageQr2.setImageBitmap(bitmap2);
-				findViewById(R.id.txt_2).setVisibility(View.VISIBLE);
-				findViewById(R.id.qr_2).setVisibility(View.VISIBLE);
-			} else {
-				findViewById(R.id.txt_2).setVisibility(View.INVISIBLE);
-				findViewById(R.id.qr_2).setVisibility(View.INVISIBLE);
-			}
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		*/
-
-		//transaction_edit.commit();
 	}
 
 	@Override
@@ -154,28 +156,19 @@ public class QrActivity extends AppCompatActivity
 	@Override
 	public void onBackPressed() {
 		try {
-			EditText ssid = m_edit_fragment.getActivity().findViewById(R.id.qr_ssid);
-			EditText pass = m_edit_fragment.getActivity().findViewById(R.id.qr_pass);
-			m_ssid = ssid.getText().toString();
-			m_pass = pass.getText().toString();
+			m_ssid = m_edit_fragment.m_edit_ssid.getText().toString();
+			m_pass = m_edit_fragment.m_edit_pass.getText().toString();
 
 			Intent intent = new Intent();
 			Bundle bundle = new Bundle();
-			bundle.putString("AP_SSID", m_ssid);
-			bundle.putString("AP_PASS", m_pass);
-			intent.putExtras(bundle);
+			intent.putExtra("AP_SSID", m_ssid);
+			intent.putExtra("AP_PASS", m_pass);
+			//intent.putExtras(bundle);
 			setResult(RESULT_OK, intent);
 		} catch (Exception e) {
 		}
 
 		super.onBackPressed();
 		finish();
-	}
-
-	public void setWifiInfo(String ssid, String pass) {
-		m_ssid = ssid;
-		m_pass = pass;
-
-		m_view_fragment.setWifiInfo(ssid, pass);
 	}
 }
