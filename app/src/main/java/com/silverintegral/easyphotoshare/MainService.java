@@ -131,13 +131,14 @@ public class MainService extends Service {
 	private String m_note;
 
 
-
 	public MainService() {
 	}
+
 
 	public static boolean isRun() {
 		return m_isRun;
 	}
+
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -191,10 +192,12 @@ public class MainService extends Service {
 		return START_NOT_STICKY;
 	}
 
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
 	}
+
 
 	@Override
 	public void onDestroy() {
@@ -203,11 +206,13 @@ public class MainService extends Service {
 		serviceStop();
 	}
 
+
 	@Nullable
 	@Override
 	public IBinder onBind(Intent intent) {
 		return null;
 	}
+
 
 	private void serviceStart() {
 		//startNsd();
@@ -215,30 +220,36 @@ public class MainService extends Service {
 		startHttp();
 	}
 
+
 	private void serviceStop() {
 		stopHttp();
 		stopImage();
 		//stopNsd();
 	}
 
+
 	private void startHttp() {
 		m_http = new HttpService(m_ip, m_port, m_root_uri, m_note);
 		m_http.start();
 	}
+
 
 	private void stopHttp() {
 		m_http.shutdown();
 		m_http = null;
 	}
 
+
 	private void startImage() {
 		m_image = new ImageService(m_root_uri);
 		m_image.start();
 	}
 
+
 	private void stopImage() {
 		m_image.shutdown();
 	}
+
 
 	/*
 	private void startNsd() {
@@ -803,7 +814,6 @@ public class MainService extends Service {
 
 		private void deleteSelfCache() {
 			deleteFolder("cache/self");
-
 		}
 
 		private void deleteFolder(String name) {
@@ -820,6 +830,7 @@ public class MainService extends Service {
 
 			dir.delete();
 		}
+
 
 		private void init() {
 			s_images = new TreeMap<>();
@@ -1196,6 +1207,7 @@ public class MainService extends Service {
 			c.close();
 
 			if (name.startsWith("jit_")) {
+				// デバッグ用
 				name = name.toString();
 			}
 

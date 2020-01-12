@@ -72,8 +72,6 @@ public class MainActivity extends AppCompatActivity {
 	private static final int REQUEST_PERMISSION_STORAGE = 21;
 	private static final int REQUEST_PERMISSION_NETWORK = 22;
 
-	private int m_app_qr_alert_not_agein = 0;
-
 	private String m_sv_ip = "";
 	private Integer m_sv_port = 0;
 	private String m_sv_name = "";
@@ -90,8 +88,9 @@ public class MainActivity extends AppCompatActivity {
 
 	private String m_ap_ssid = "";
 	private String m_ap_pass = "";
-	private Boolean m_ap_hotspot = true;
+	private Boolean m_ap_hotspot = false;
 	private WifiManager.LocalOnlyHotspotReservation m_ap_state = null;
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
 		m_networkIF = new IntentFilter();
 		m_networkIF.addAction("MY_ACTION");
 		//registerReceiver(m_networkBR, m_networkIF);
-
 
 		setContentView(R.layout.activity_main);
 
@@ -119,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
 		m_ap_ssid = sharedPreferences.getString("AP_SSID", "");
 		m_ap_pass = sharedPreferences.getString("AP_PASS", "");
 		m_ap_hotspot = sharedPreferences.getBoolean("AP_HOTSPOT", false);
-
+		m_ap_hotspot = true;
 
 		// 不正な設定の修正
 		SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -160,7 +158,6 @@ public class MainActivity extends AppCompatActivity {
 		}
 
 		editor.apply();
-
 
 		Button btn_start = findViewById(R.id.main_btn_start);
 		if (!m_sv_root_disp.equals("")) {
@@ -203,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 
-		findViewById(R.id.main_btn_copy).setOnClickListener( new View.OnClickListener() {
+		findViewById(R.id.main_btn_copy).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
 				ClipboardManager clipboardManager =
@@ -217,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 
-		findViewById(R.id.main_btn_share).setOnClickListener( new View.OnClickListener() {
+		findViewById(R.id.main_btn_share).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
 				Intent shareIntent = new Intent(Intent.ACTION_SEND);
@@ -234,7 +231,6 @@ public class MainActivity extends AppCompatActivity {
 				showQR();
 			}
 		});
-
 
 		if (MainService.isRun())
 			m_sv_run = true;
@@ -257,11 +253,13 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return super.onCreateOptionsMenu(menu);
 	}
+
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -285,6 +283,7 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
@@ -294,7 +293,6 @@ public class MainActivity extends AppCompatActivity {
 
 		try {
 			if (requestCode == REQUEST_QRCODEEDIT) {
-				//Bundle bundle = data.getExtras();
 				m_ap_ssid = data.getStringExtra("AP_SSID");
 				m_ap_pass = data.getStringExtra("AP_PASS");
 
@@ -359,10 +357,12 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+
 	@Override
 	protected void onResume() {
 		super.onResume();
 	}
+
 
 	@Override
 	protected void onDestroy() {
@@ -371,6 +371,7 @@ public class MainActivity extends AppCompatActivity {
 		finish();
 	}
 
+
 	private void startService() { startService_in(false); }
 	private void startServiceWifi() { startService_in(true); }
 	private void startService_in(Boolean forceWifi) {
@@ -378,7 +379,6 @@ public class MainActivity extends AppCompatActivity {
 			return;
 
 		m_sv_ip = getIPv4();
-
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			if (m_ap_hotspot) {
@@ -406,7 +406,6 @@ public class MainActivity extends AppCompatActivity {
 				return;
 			}
 		}
-
 
 		if (m_sv_ip == null) {
 			new AlertDialog.Builder(this).setCancelable(false)
@@ -465,6 +464,7 @@ public class MainActivity extends AppCompatActivity {
 		refreshUI();
 	}
 
+
 	private void stopService() {
 		if (!m_sv_run)
 			return;
@@ -485,10 +485,12 @@ public class MainActivity extends AppCompatActivity {
 		refreshUI();
 	}
 
+
 	private boolean getWifiState() {
 		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		return mWifiManager.isWifiEnabled();
 	}
+
 
 	private void refreshUI() {
 		if (m_sv_run) {
@@ -532,6 +534,7 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+
 	private void showQR() {
 		Intent intent = new Intent(this, QrActivity.class);
 		intent.putExtra("HOST_IP", m_sv_ip);
@@ -541,6 +544,7 @@ public class MainActivity extends AppCompatActivity {
 		intent.putExtra("AP_HOTSPOT", m_ap_hotspot);
 		startActivityForResult(intent, REQUEST_QRCODEEDIT);
 	}
+
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
 	private void startAp() {
@@ -608,7 +612,6 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 
-
 	// 現在アクティブなネットワークの種別を取得
 	private String getNetwork() {
 		ConnectivityManager cm = (ConnectivityManager)this.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -640,6 +643,7 @@ public class MainActivity extends AppCompatActivity {
 				return null;
 		}
 	}
+
 
 	// 現在有効なIPアドレスを取得
 	private String getIPv4() {
@@ -677,6 +681,7 @@ public class MainActivity extends AppCompatActivity {
 		return null;
 	}
 
+
 	// ストレージの権限確認
 	private void testPermission_storage() {
 		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -701,6 +706,7 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+
 	// ネットワークの権限確認
 	private void testPermission_network() {
 		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CHANGE_WIFI_STATE)
@@ -724,6 +730,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 		}
 	}
+
 
 	// 権限確認の結果受け取り
 	@Override

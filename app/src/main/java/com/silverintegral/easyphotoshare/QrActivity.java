@@ -50,6 +50,7 @@ public class QrActivity extends AppCompatActivity
 	private String m_pass = null;
 	private Boolean m_hotspot = null;
 
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -112,7 +113,6 @@ public class QrActivity extends AppCompatActivity
 		else
 			findViewById(R.id.qr_nav).setVisibility(View.VISIBLE);
 
-
 		m_view_fragment.setArguments(bundle_view);
 		m_edit_fragment.setArguments(bundle_edit);
 
@@ -143,6 +143,7 @@ public class QrActivity extends AppCompatActivity
 		});
 	}
 
+
 	@Override
 	public void onPause() {
 		super.onPause();
@@ -153,6 +154,7 @@ public class QrActivity extends AppCompatActivity
 	public void onFragmentInteraction(Uri uri) {
 	}
 
+
 	@Override
 	public void onBackPressed() {
 		try {
@@ -160,10 +162,8 @@ public class QrActivity extends AppCompatActivity
 			m_pass = m_edit_fragment.m_edit_pass.getText().toString();
 
 			Intent intent = new Intent();
-			Bundle bundle = new Bundle();
 			intent.putExtra("AP_SSID", m_ssid);
 			intent.putExtra("AP_PASS", m_pass);
-			//intent.putExtras(bundle);
 			setResult(RESULT_OK, intent);
 		} catch (Exception e) {
 		}

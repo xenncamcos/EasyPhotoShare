@@ -33,10 +33,6 @@ import android.widget.EditText;
 
 
 public class QrEditFragment extends Fragment {
-	/* private View m_activity_qr_view = null;
-	private View m_fragment_qr_view = null;
-	private View m_fragment_qr_edit = null; */
-
 	private QrActivity m_parentActivity = null;
 
 	private OnFragmentInteractionListener mListener;
@@ -62,21 +58,14 @@ public class QrEditFragment extends Fragment {
 		}
 	}
 
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 							 Bundle savedInstanceState) {
 		//super.onCreateView(inflater, container, savedInstanceState);
-
-		/*
-		m_activity_qr_view = inflater.inflate(R.layout.activity_qr, null);
-		m_fragment_qr_view = inflater.inflate(R.layout.fragment_qr_view, null);
-		m_fragment_qr_edit = inflater.inflate(R.layout.fragment_qr_edit, null);
-		 */
-
-
-
 		return inflater.inflate(R.layout.fragment_qr_edit, container, false);
 	}
+
 
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
@@ -94,6 +83,7 @@ public class QrEditFragment extends Fragment {
 		super.onPause();
 	}
 
+
 	@Override
 	public void onAttach(Context context) {
 		super.onAttach(context);
@@ -105,11 +95,13 @@ public class QrEditFragment extends Fragment {
 		}
 	}
 
+
 	@Override
 	public void onDetach() {
 		super.onDetach();
 		mListener = null;
 	}
+
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {

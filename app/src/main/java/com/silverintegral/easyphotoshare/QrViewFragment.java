@@ -41,9 +41,6 @@ import java.util.HashMap;
 
 
 public class QrViewFragment extends Fragment {
-	private View m_activity_qr_view = null;
-	private View m_fragment_qr_view = null;
-	private View m_fragment_qr_edit = null;
 	private QrActivity m_parentActivity = null;
 
 	private OnFragmentInteractionListener mListener;
@@ -70,17 +67,14 @@ public class QrViewFragment extends Fragment {
 		}
 	}
 
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 							 Bundle savedInstanceState) {
 		//super.onCreateView(inflater, container, savedInstanceState);
-
-		m_activity_qr_view = inflater.inflate(R.layout.activity_qr, null);
-		m_fragment_qr_view = inflater.inflate(R.layout.fragment_qr_view, null);
-		m_fragment_qr_edit = inflater.inflate(R.layout.fragment_qr_edit, null);
-
 		return inflater.inflate(R.layout.fragment_qr_view, container, false);
 	}
+
 
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
@@ -88,6 +82,7 @@ public class QrViewFragment extends Fragment {
 
 		RefreshUI();
 	}
+
 
 	@Override
 	public void onAttach(Context context) {
@@ -101,17 +96,18 @@ public class QrViewFragment extends Fragment {
 		}
 	}
 
+
 	@Override
 	public void onDetach() {
 		super.onDetach();
 		mListener = null;
 	}
 
+
 	public void setWifiInfo(String ssid, String pass) {
 		m_ssid = ssid;
 		m_pass = pass;
 	}
-
 
 
 	private void RefreshUI() {
@@ -147,6 +143,7 @@ public class QrViewFragment extends Fragment {
 			e.printStackTrace();
 		}
 	}
+
 
 	/**
 	 * This interface must be implemented by activities that contain this
