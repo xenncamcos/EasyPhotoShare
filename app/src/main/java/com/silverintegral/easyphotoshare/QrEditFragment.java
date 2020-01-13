@@ -72,9 +72,9 @@ public class QrEditFragment extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 
 		m_edit_ssid = m_parentActivity.findViewById(R.id.qr_ssid);
-		m_edit_ssid.setText(m_ssid);
+		m_edit_ssid.setText(m_parentActivity.m_ssid);
 		m_edit_pass = m_parentActivity.findViewById(R.id.qr_pass);
-		m_edit_pass.setText(m_pass);
+		m_edit_pass.setText(m_parentActivity.m_pass);
 	}
 
 
@@ -87,6 +87,7 @@ public class QrEditFragment extends Fragment {
 	@Override
 	public void onAttach(Context context) {
 		super.onAttach(context);
+
 		if (context instanceof OnFragmentInteractionListener) {
 			mListener = (OnFragmentInteractionListener) context;
 		} else {
@@ -99,6 +100,9 @@ public class QrEditFragment extends Fragment {
 	@Override
 	public void onDetach() {
 		super.onDetach();
+		m_parentActivity.m_ssid = m_edit_ssid.getText().toString();
+		m_parentActivity.m_pass = m_edit_pass.getText().toString();
+
 		mListener = null;
 	}
 

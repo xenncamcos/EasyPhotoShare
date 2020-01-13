@@ -93,7 +93,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 public class MainService extends Service {
 	private final String HTTP_SERVER_NAME = "EPSS/1.0";
-	private final int HTTP_MAX_REQUEST_CONNECTION = 4; // クライアントの最大接続数
+	private final int HTTP_MAX_REQUEST_CONNECTION = 8; // クライアントの最大接続数
 	private final int HTTP_MAX_REQUEST_SIZE = 2048; // リクエストデータの最大サイズ
 	private final int IMAGE_MAX_REQUEST_CONVERT = 8; // 同時画像最適化数
 	private final int IMAGE_MAX_SIZE_S = 300;
@@ -324,7 +324,7 @@ public class MainService extends Service {
 
 		public void run() {
 			try {
-				s_server_sock = new ServerSocket(s_port);
+				s_server_sock = new ServerSocket(m_port,128);
 			} catch (IOException e) {
 				// 起動に失敗ネットワーク権限？
 				e.printStackTrace();
@@ -1007,7 +1007,8 @@ public class MainService extends Service {
 				return;
 			}
 
-			index_src = index_src.replace("<!--#TITLE#-->", "EASY PHOTO SHARE");
+			String title = m_name.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
+			index_src = index_src.replace("<!--#TITLE#-->", title);
 
 			String names = "<script>var imgp = -1; var imgs = [";
 

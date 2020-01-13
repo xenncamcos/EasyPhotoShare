@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!--<uses-permission
         android:name="android.permission.CONNECTIVITY_INTERNAL"
         tools:ignore="ProtectedPermissions" />
@@ -35,18 +36,21 @@
             android:name=".QrActivity"
             android:label="@string/title_activity_qr"
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme" />
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.Light" />
-        <activity android:name=".LicenseActivity" />
+            android:theme="@style/AppTheme" />
+        <activity android:name=".LicenseActivity"
+            android:label="@string/title_activity_license"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme" />
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.AppCompat.Light">
+            android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

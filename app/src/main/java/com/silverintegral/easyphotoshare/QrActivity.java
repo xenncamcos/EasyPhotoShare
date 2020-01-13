@@ -44,11 +44,11 @@ public class QrActivity extends AppCompatActivity
 	private QrViewFragment m_view_fragment;
 	private QrEditFragment m_edit_fragment;
 
-	private String m_ip = null;
-	private int m_port = 0;
-	private String m_ssid = null;
-	private String m_pass = null;
-	private Boolean m_hotspot = null;
+	public String m_ip = null;
+	public int m_port = 0;
+	public String m_ssid = null;
+	public String m_pass = null;
+	public Boolean m_hotspot = null;
 
 
 	@Override
@@ -131,6 +131,7 @@ public class QrActivity extends AppCompatActivity
 						transaction = getSupportFragmentManager().beginTransaction();
 						transaction.replace(R.id.qr_frame, m_view_fragment);
 						transaction.commit();
+
 						return true;
 					case R.id.qr_menu_2:
 						transaction = getSupportFragmentManager().beginTransaction();

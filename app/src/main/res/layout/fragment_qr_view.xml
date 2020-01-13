@@ -10,20 +10,19 @@
         android:id="@+id/txt_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
         android:text="URL"
         android:textAlignment="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textColor="#3F51B5"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textColor="@color/colorPrimary"
         android:visibility="visible" />
 
 
     <ImageView
         android:id="@+id/qr_1"
         android:layout_width="match_parent"
-        android:layout_height="240dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="20dp"
+        android:layout_height="230dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
         android:adjustViewBounds="true"
         android:minWidth="60dp"
         android:minHeight="60dp"
@@ -33,23 +32,24 @@
         android:id="@+id/txt_2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
         android:text="Wi-Fi接続"
         android:textAlignment="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textColor="#3F51B5"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textColor="@color/colorPrimary"
         android:visibility="visible" />
 
 
     <ImageView
         android:id="@+id/qr_2"
         android:layout_width="match_parent"
-        android:layout_height="240dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="20dp"
+        android:layout_height="230dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:adjustViewBounds="true"
         android:minWidth="60dp"
         android:minHeight="60dp"
-        android:scaleType="fitCenter"
-        android:adjustViewBounds="true"/>
+        android:scaleType="fitCenter" />
 
 
 

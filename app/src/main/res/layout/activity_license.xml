@@ -9,7 +9,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="6pt"
+        android:layout_margin="12dp"
         android:orientation="vertical"
         tools:layout_editor_absoluteX="1dp"
         tools:layout_editor_absoluteY="1dp">
@@ -40,7 +40,8 @@
             android:layout_height="wrap_content"
             android:text="ソフトウェアのライセンス"
             android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="@color/colorPrimary" />
 
         <TextView
             android:id="@+id/textView8"
@@ -72,7 +73,8 @@
             android:layout_marginTop="10pt"
             android:text="ライブラリのライセンス"
             android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="@color/colorPrimary" />
 
         <TextView
             android:id="@+id/textView"
@@ -97,7 +99,8 @@
             android:layout_marginTop="10pt"
             android:text="サポート"
             android:textAlignment="center"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textColor="@color/colorPrimary" />
 
         <TextView
             android:id="@+id/textView20"

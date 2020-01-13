@@ -58,13 +58,6 @@ public class QrViewFragment extends Fragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		if (getArguments() != null) {
-			m_ip = getArguments().getString("HOST_IP", "");
-			m_port = getArguments().getInt("HOST_PORT", 0);
-			m_ssid = getArguments().getString("AP_SSID", "");
-			m_pass = getArguments().getString("AP_PASS", "");
-		}
 	}
 
 
@@ -80,6 +73,10 @@ public class QrViewFragment extends Fragment {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
+		m_ip = m_parentActivity.m_ip;
+		m_port = m_parentActivity.m_port;
+		m_ssid = m_parentActivity.m_ssid;
+		m_pass = m_parentActivity.m_pass;
 		RefreshUI();
 	}
 
@@ -101,12 +98,6 @@ public class QrViewFragment extends Fragment {
 	public void onDetach() {
 		super.onDetach();
 		mListener = null;
-	}
-
-
-	public void setWifiInfo(String ssid, String pass) {
-		m_ssid = ssid;
-		m_pass = pass;
 	}
 
 

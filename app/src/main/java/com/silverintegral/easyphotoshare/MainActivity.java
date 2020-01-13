@@ -48,16 +48,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Toolbar;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URLDecoder;
 import java.util.Enumeration;
+import java.util.Random;
 
 import static android.text.Html.TO_HTML_PARAGRAPH_LINES_INDIVIDUAL;
 import static android.text.Html.fromHtml;
@@ -88,7 +94,10 @@ public class MainActivity extends AppCompatActivity {
 
 	private String m_ap_ssid = "";
 	private String m_ap_pass = "";
-	private Boolean m_ap_hotspot = false;
+	private String m_ap_hs_ssid = "";
+	private String m_ap_hs_pass = "";
+	private Boolean m_ap_enable_hotspot = false;
+	private Boolean m_ap_use_hotspot = false;
 	private WifiManager.LocalOnlyHotspotReservation m_ap_state = null;
 
 
@@ -116,14 +125,16 @@ public class MainActivity extends AppCompatActivity {
 		m_sv_delcache = sharedPreferences.getBoolean("SV_DELCACHE", false);
 		m_ap_ssid = sharedPreferences.getString("AP_SSID", "");
 		m_ap_pass = sharedPreferences.getString("AP_PASS", "");
-		m_ap_hotspot = sharedPreferences.getBoolean("AP_HOTSPOT", false);
-		m_ap_hotspot = true;
+		m_ap_use_hotspot = sharedPreferences.getBoolean("AP_USE_HOTSPOT", false);
+
+		m_ap_hs_ssid = sharedPreferences.getString("AP_HS_SSID", null);
+		m_ap_hs_pass = sharedPreferences.getString("AP_HS_PASS", null);
+		if (m_ap_hs_ssid != null) {
+			m_ap_enable_hotspot = true;
+		}
 
 		// 不正な設定の修正
 		SharedPreferences.Editor editor = sharedPreferences.edit();
-
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
-			m_ap_hotspot = false;
 
 		// ポート確認
 		if (m_sv_port < 1024 || m_sv_port > 65535) {
@@ -158,6 +169,9 @@ public class MainActivity extends AppCompatActivity {
 		}
 
 		editor.apply();
+
+		((EditText)findViewById(R.id.main_txt_name)).setText(m_sv_name);
+		((CheckBox)findViewById(R.id.main_chk_hotspot)).setChecked(m_ap_use_hotspot);
 
 		Button btn_start = findViewById(R.id.main_btn_start);
 		if (!m_sv_root_disp.equals("")) {
@@ -374,25 +388,27 @@ public class MainActivity extends AppCompatActivity {
 
 	private void startService() { startService_in(false); }
 	private void startServiceWifi() { startService_in(true); }
-	private void startService_in(Boolean forceWifi) {
+	private void startService_in(final Boolean forceWifi) {
 		if (m_sv_run)
 			return;
 
+		m_sv_name = ((EditText)findViewById(R.id.main_txt_name)).getText().toString();
+		m_ap_use_hotspot = ((CheckBox)findViewById(R.id.main_chk_hotspot)).isChecked();
+
 		m_sv_ip = getIPv4();
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			if (m_ap_hotspot) {
+		//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			if (m_ap_use_hotspot) {
 				if (m_sv_ip == null) {
 					new AlertDialog.Builder(this).setCancelable(false)
-							.setMessage("ホットスポットを作成しますか？")
+							.setTitle("IPアドレスが見つかりません")
+							.setMessage("ホットスポットを作成しますか？\n\n※一部のAndroidからアクセスが不可能になる可能性があります。")
 							.setPositiveButton("作成する", new DialogInterface.OnClickListener() {
 								public void onClick(DialogInterface dialog, int id) {
 									testPermission_network();
 									if (m_pem_network) {
-										startAp();
-
-										if (waitActiveIP()) {
-											startService_in(true);
+										if (startAp()) {
+											startServiceWifi();
 										} else {
 											Toast.makeText(MainActivity.this, "作成に失敗しました",Toast.LENGTH_LONG ).show();
 										}
@@ -401,11 +417,10 @@ public class MainActivity extends AppCompatActivity {
 							})
 							.setNegativeButton("いいえ", null)
 							.create().show();
+					return;
 				}
-
-				return;
 			}
-		}
+		//}
 
 		if (m_sv_ip == null) {
 			new AlertDialog.Builder(this).setCancelable(false)
@@ -423,8 +438,7 @@ public class MainActivity extends AppCompatActivity {
 		} else if (getWifiState() && !forceWifi) {
 			new AlertDialog.Builder(this).setCancelable(false)
 					.setTitle("Wi-Fiネットワークの検出")
-					.setMessage("同じWi-Fiネットワークに存在するクライアントからのみ閲覧が可能です。\n"
-							+ "またパブリックネットワークの場合は第三者が容易に傍受可能です。")
+					.setMessage("同じWi-Fiネットワークに存在するクライアントからのみ閲覧が可能です。\n")
 					.setPositiveButton("Wi-Fi接続で開始", new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int id) {
 							startServiceWifi();
@@ -437,10 +451,12 @@ public class MainActivity extends AppCompatActivity {
 		}
 
 
-		// 実行IPの保存
+		// 設定の保存
 		SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 		SharedPreferences.Editor editor = sharedPreferences.edit();
 		editor.putString("SV_IP", m_sv_ip);
+		editor.putString("SV_NAME", m_sv_name);
+		editor.putBoolean("AP_USE_HOTSPOT", m_ap_use_hotspot);
 		editor.apply();
 
 		// サービスの開始
@@ -478,7 +494,7 @@ public class MainActivity extends AppCompatActivity {
 		editor.putString("SV_IP", "");
 		editor.apply();
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+		if (m_ap_enable_hotspot)
 			stopAp();
 
 		m_sv_run = false;
@@ -500,6 +516,8 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(R.id.main_btn_copy).setEnabled(true);
 			findViewById(R.id.main_btn_share).setEnabled(true);
 			findViewById(R.id.main_btn_qr).setEnabled(true);
+			findViewById(R.id.main_txt_name).setEnabled(false);
+			findViewById(R.id.main_chk_hotspot).setEnabled(false);
 
 			String port = m_sv_port.toString();
 			if (port.equals("80"))
@@ -507,9 +525,20 @@ public class MainActivity extends AppCompatActivity {
 			else
 				port = ":" + port;
 
-			String html = "<b>サービス実行中</b><br><br>"
-					+ "<b>URL:</b> <a href=\"http://" + m_sv_ip + ":8088\">http://" + m_sv_ip + port + "</a><br>"
-			+ "<b>PATH:</b> " + m_sv_root_disp;
+			String html = "<b>サービス実行中</b><br>"
+					+ "<a href=\"http://" + m_sv_ip + ":8088\">http://" + m_sv_ip + port + "</a><br><br>"
+					+ "<b>PATH:</b> " + m_sv_root_disp + "<br>"
+					+ "<b>TYPE:</b> " + getNetworkType() + "<br>";
+			if (m_ap_enable_hotspot && m_ap_hs_ssid != null) {
+				html += "<b>SSID:</b> " + m_ap_hs_ssid + "<br>"
+						+ "<b>PASS:</b> " + m_ap_hs_pass + "<br>";
+			} else if (m_ap_ssid != null && !getNetworkType().equals("wifi")) {
+				html += "<b>SSID:</b> " + m_ap_ssid + "<br>"
+						+ "<b>PASS:</b> " + m_ap_pass + "<br>";
+			} else {
+				html += "<b>SSID:</b> -<br>"
+						+ "<b>PASS:</b> -<br>";
+			}
 
 			TextView tv_info = findViewById(R.id.main_txt_info_view);
 			tv_info.setText(fromHtml(html, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL));
@@ -526,6 +555,10 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(R.id.main_btn_share).setEnabled(false);
 			findViewById(R.id.main_btn_qr).setEnabled(false);
 
+			findViewById(R.id.main_txt_name).setEnabled(true);
+			findViewById(R.id.main_chk_hotspot).setEnabled(true);
+
+
 			String html = "<b>サービス停止中</b><br><br><br><br><br>";
 
 			TextView tv_info = findViewById(R.id.main_txt_info_view);
@@ -539,15 +572,63 @@ public class MainActivity extends AppCompatActivity {
 		Intent intent = new Intent(this, QrActivity.class);
 		intent.putExtra("HOST_IP", m_sv_ip);
 		intent.putExtra("HOST_PORT", m_sv_port);
-		intent.putExtra("AP_SSID", m_ap_ssid);
-		intent.putExtra("AP_PASS", m_ap_pass);
-		intent.putExtra("AP_HOTSPOT", m_ap_hotspot);
-		startActivityForResult(intent, REQUEST_QRCODEEDIT);
+
+		if (m_ap_enable_hotspot) {
+			intent.putExtra("AP_SSID", m_ap_hs_ssid);
+			intent.putExtra("AP_PASS", m_ap_hs_pass);
+		} else {
+			intent.putExtra("AP_SSID", m_ap_ssid);
+			intent.putExtra("AP_PASS", m_ap_pass);
+		}
+
+		intent.putExtra("AP_HOTSPOT", m_ap_enable_hotspot);
+
+		if (m_ap_enable_hotspot)
+			startActivity(intent);
+		else
+			startActivityForResult(intent, REQUEST_QRCODEEDIT);
+	}
+
+
+	private Boolean startAp() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			startAp_new();
+		} else {
+			startAp_old();
+		}
+
+		if (waitActiveIP()) {
+			//if (m_ap_hs_ssid != null) {
+				m_ap_enable_hotspot = true;
+				refreshUI();
+
+				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+				SharedPreferences.Editor editor = sharedPreferences.edit();
+				editor.putString("AP_HS_SSID", m_ap_hs_ssid);
+				editor.putString("AP_HS_PASS", m_ap_hs_pass);
+				editor.apply();
+
+				return true;
+			//}
+		}
+
+		m_ap_enable_hotspot = false;
+		m_ap_hs_ssid = null;
+		m_ap_hs_pass = null;
+
+		if (m_ap_state != null) {
+			m_ap_state.close();
+			m_ap_state = null;
+		}
+		m_ap_state = null;
+
+		refreshUI();
+		return false;
 	}
 
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
-	private void startAp() {
+	private void startAp_new() {
 		WifiManager manager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		if (manager == null) {
 			return;
@@ -559,35 +640,161 @@ public class MainActivity extends AppCompatActivity {
 				super.onStarted(reservation);
 				m_ap_state = reservation;
 				WifiConfiguration conf = m_ap_state.getWifiConfiguration();
-				m_ap_ssid = conf.SSID;
-				m_ap_pass = conf.preSharedKey;
+				m_ap_hs_ssid = conf.SSID;
+				m_ap_hs_pass = conf.preSharedKey;
+				refreshUI();
 			}
 
 			@Override
 			public void onStopped() {
 				super.onStopped();
-				m_ap_state = null;
 			}
 
 			@Override
 			public void onFailed(int reason) {
 				super.onFailed(reason);
-				m_ap_state = null;
 			}
 		}, new Handler());
 	}
 
 
-	@RequiresApi(api = Build.VERSION_CODES.O)
+	private void startAp_old() {
+		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		if (mWifiManager == null) {
+			return;
+		}
+
+		Method setWifiApState;
+		try {
+			setWifiApState = mWifiManager.getClass().getMethod("setWifiApState", WifiConfiguration.class, boolean.class);
+			if (setWifiApState == null)
+				return;
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		Random rand = new Random();
+		String ssid = "EPS_";
+		String pass = "";
+
+		for (int i = 0; i < 6; i++) {
+			ssid += String.valueOf(rand.nextInt(8) + 1);
+		}
+
+		for (int i = 0; i < 20; i++) {
+			pass += String.valueOf(rand.nextInt(9));
+		}
+
+		WifiConfiguration conf = new WifiConfiguration();
+		conf.SSID = ssid;
+		conf.preSharedKey = pass;
+		conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+		conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+		conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
+		mWifiManager.addNetwork(conf);
+
+		try {
+			setWifiApState.invoke(mWifiManager, null,false);
+			Boolean ret = (Boolean)setWifiApState.invoke(mWifiManager, null, true);
+			if (ret != null && ret) {
+				m_ap_hs_ssid = ssid;
+				m_ap_hs_pass = pass;
+			}
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			e.printStackTrace();
+		}
+	}
+
+
 	private void stopAp() {
-		m_ap_ssid = null;
-		m_ap_pass = null;
+		if (!m_ap_enable_hotspot)
+			return;
+
+		m_ap_enable_hotspot = false;
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			stopAp_new();
+		} else {
+			stopAp_old();
+		}
+
+		refreshUI();
+	}
+
+
+	@RequiresApi(api = Build.VERSION_CODES.O)
+	private void stopAp_new() {
+		m_ap_hs_ssid = null;
+		m_ap_hs_pass = null;
 
 		try {
 			if (m_ap_state != null) {
 				m_ap_state.close();
+				m_ap_state = null;
 			}
 		} catch (Exception ignored) {
+		}
+	}
+
+
+	private void stopAp_old() {
+		m_ap_hs_ssid = null;
+		m_ap_hs_pass = null;
+
+		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		if (mWifiManager == null) {
+			return;
+		}
+
+		int stat = mWifiManager.getWifiState();
+		if (stat == WifiManager.WIFI_STATE_ENABLED || stat == WifiManager.WIFI_STATE_ENABLING) {
+			try {
+				Method setWifiApState = mWifiManager.getClass().getMethod("setWifiApState", WifiConfiguration.class, boolean.class);
+				setWifiApState.invoke(mWifiManager, null, false);
+			} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+
+	// 現在アクティブなネットワークの種別を取得
+	private String getNetworkType() {
+		if (m_ap_enable_hotspot) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+				return "hotspot (localonly)";
+			else
+				return "hotspot (tethering)";
+		}
+
+		ConnectivityManager cm = (ConnectivityManager)this.getSystemService(Context.CONNECTIVITY_SERVICE);
+		if (cm == null)
+			return "error";
+
+		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+		if (activeNetwork == null)
+			return "error";
+
+		if (!activeNetwork.isConnected())
+			return "error";
+
+		switch (activeNetwork.getType()) {
+			case ConnectivityManager.TYPE_WIFI:
+				return "wifi";
+			case ConnectivityManager.TYPE_WIMAX:
+				return "wimax";
+			case ConnectivityManager.TYPE_ETHERNET:
+				return "ethernet";
+			case ConnectivityManager.TYPE_VPN:
+				return "vpn";
+			case ConnectivityManager.TYPE_BLUETOOTH:
+				return "bluetooth";
+			case ConnectivityManager.TYPE_MOBILE:
+			case ConnectivityManager.TYPE_MOBILE_DUN:
+				return "mobile";
+			default:
+				return "unknown";
 		}
 	}
 
@@ -608,39 +815,6 @@ public class MainActivity extends AppCompatActivity {
 
 			if (maxtime < System.currentTimeMillis())
 				return false;
-		}
-	}
-
-
-	// 現在アクティブなネットワークの種別を取得
-	private String getNetwork() {
-		ConnectivityManager cm = (ConnectivityManager)this.getSystemService(Context.CONNECTIVITY_SERVICE);
-		if (cm == null)
-			return null;
-
-		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-		if (activeNetwork == null)
-			return null;
-
-		if (!activeNetwork.isConnected())
-			return null;
-
-		switch (activeNetwork.getType()) {
-			case ConnectivityManager.TYPE_WIFI:
-				return "WIFI";
-			case ConnectivityManager.TYPE_WIMAX:
-				return "WIMAX";
-			case ConnectivityManager.TYPE_ETHERNET:
-				return "ETHERNET";
-			case ConnectivityManager.TYPE_VPN:
-				return "VPN";
-			case ConnectivityManager.TYPE_BLUETOOTH:
-				return "BLUETOOTH";
-			case ConnectivityManager.TYPE_MOBILE:
-			case ConnectivityManager.TYPE_MOBILE_DUN:
-				return "MOBILE";
-			default:
-				return null;
 		}
 	}
 
@@ -684,8 +858,10 @@ public class MainActivity extends AppCompatActivity {
 
 	// ストレージの権限確認
 	private void testPermission_storage() {
-		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-				== PackageManager.PERMISSION_GRANTED) {
+		if (
+				ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+				&& ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+		) {
 
 			// 既に許可がされていた
 			m_pem_storage = true;
@@ -709,8 +885,11 @@ public class MainActivity extends AppCompatActivity {
 
 	// ネットワークの権限確認
 	private void testPermission_network() {
-		if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CHANGE_WIFI_STATE)
-				== PackageManager.PERMISSION_GRANTED) {
+		if (
+				ActivityCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE) == PackageManager.PERMISSION_GRANTED
+				&& ActivityCompat.checkSelfPermission(this, Manifest.permission.CHANGE_WIFI_STATE) == PackageManager.PERMISSION_GRANTED
+				&& ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+		 ) {
 
 			// 既に許可がされていた
 			m_pem_network = true;
@@ -720,13 +899,15 @@ public class MainActivity extends AppCompatActivity {
 
 			// チェック
 			ActivityCompat.requestPermissions(this,
-					new String[] {Manifest.permission.CHANGE_NETWORK_STATE, Manifest.permission.CHANGE_WIFI_STATE}, REQUEST_PERMISSION_NETWORK);
+					new String[] {Manifest.permission.CHANGE_NETWORK_STATE, Manifest.permission.CHANGE_WIFI_STATE, Manifest.permission.ACCESS_COARSE_LOCATION},
+					REQUEST_PERMISSION_NETWORK);
 
 			if (ActivityCompat.shouldShowRequestPermissionRationale(this,
 					Manifest.permission.CHANGE_WIFI_STATE)) {
 				// 再度要求をしても大丈夫
 				ActivityCompat.requestPermissions(this,
-						new String[] {Manifest.permission.ACCESS_WIFI_STATE, Manifest.permission.CHANGE_WIFI_STATE}, REQUEST_PERMISSION_NETWORK);
+						new String[] {Manifest.permission.ACCESS_WIFI_STATE, Manifest.permission.CHANGE_WIFI_STATE, Manifest.permission.ACCESS_COARSE_LOCATION},
+						REQUEST_PERMISSION_NETWORK);
 			}
 		}
 	}
@@ -766,13 +947,10 @@ public class MainActivity extends AppCompatActivity {
 		} else if (requestCode == REQUEST_PERMISSION_NETWORK) {
 			if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 				m_pem_network = true;
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-					startAp();
-					if (waitActiveIP()) {
-						startServiceWifi();
-					} else {
-						Toast.makeText(MainActivity.this, "作成に失敗しました",Toast.LENGTH_LONG ).show();
-					}
+				if (startAp()) {
+					startServiceWifi();
+				} else {
+					Toast.makeText(MainActivity.this, "作成に失敗しました",Toast.LENGTH_LONG ).show();
 				}
 			} else {
 				m_pem_network = false;
@@ -780,236 +958,4 @@ public class MainActivity extends AppCompatActivity {
 			}
 		}
 	}
-
-
-	/*
-	private boolean setWifiState(boolean state) {
-		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		if (mWifiManager.setWifiEnabled(state)) {
-			if (state) {
-				Toast.makeText(this, "Wi-Fiの有効化", Toast.LENGTH_LONG).show();
-			} else {
-				Toast.makeText(this, "Wi-Fiの無効化", Toast.LENGTH_LONG).show();
-			}
-
-			return true;
-		} else {
-			Toast.makeText(this, "Wi-Fiの設定に失敗しました", Toast.LENGTH_LONG).show();
-			return false;
-		}
-	}
-
-	private boolean getApState() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			return getApState_new();
-		} else {
-			return getApState_old();
-		}
-	}
-
-	private Boolean getApState_old() {
-		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		if (mWifiManager == null) {
-			m_ap_ssid = null;
-			m_ap_pass = null;
-			return false;
-		}
-
-		Method getWifiApState;
-		try {
-			getWifiApState = mWifiManager.getClass().getMethod("getWifiApState", WifiConfiguration.class, boolean.class);
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-			m_ap_ssid = null;
-			m_ap_pass = null;
-			return false;
-		}
-
-		try {
-			if ((int) getWifiApState.invoke(mWifiManager) == 13) {
-				return true;
-			} else {
-				m_ap_ssid = null;
-				m_ap_pass = null;
-				return false;
-			}
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			e.printStackTrace();
-			m_ap_ssid = null;
-			m_ap_pass = null;
-			return false;
-		}
-	}
-
-	@RequiresApi(api = Build.VERSION_CODES.O)
-	private Boolean getApState_new() {
-		if (m_ap_state == null) {
-			m_ap_ssid = null;
-			m_ap_pass = null;
-			return false;
-		}
-
-		if (m_ap_state.getWifiConfiguration().status != WifiConfiguration.Status.CURRENT) {
-			m_ap_ssid = null;
-			m_ap_pass = null;
-			return false;
-		}
-
-		return true;
-	}
-
-	private boolean setApState(boolean enabled) {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-			if (!setApState_new(enabled)) {
-				Toast.makeText(MainActivity.this, "テザリングの設定に失敗しました", Toast.LENGTH_LONG).show();
-				return false;
-			}
-		} else {
-			if (!setApState_old(enabled)) {
-				Toast.makeText(MainActivity.this, "テザリングの設定に失敗しました", Toast.LENGTH_LONG).show();
-				return false;
-			}
-		}
-
-		if (enabled) {
-			if (waitActiveIP(5) && m_ap_ssid != null) {
-				Toast.makeText(MainActivity.this, "テザリングの有効化", Toast.LENGTH_LONG).show();
-			} else {
-				Toast.makeText(MainActivity.this, "テザリングの設定に失敗しました", Toast.LENGTH_LONG).show();
-			}
-		} else {
-			Toast.makeText(MainActivity.this, "テザリングの無効化", Toast.LENGTH_LONG).show();
-		}
-
-		return true;
-	}
-
-	private Boolean setApState_old(boolean state) {
-		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		if (mWifiManager == null) {
-			return false;
-		}
-
-		Method setWifiApState = null;
-		try {
-			setWifiApState = (Method)mWifiManager.getClass().getMethod("setWifiApState", WifiConfiguration.class, boolean.class);
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-			return false;
-		}
-		if (setWifiApState == null) {
-			return false;
-		}
-
-		if (!state) {
-			m_ap_ssid = null;
-			m_ap_pass = null;
-
-			Boolean Ret = null;
-			try {
-				Ret = (Boolean) setWifiApState.invoke(mWifiManager, null,false);
-			} catch (IllegalAccessException | InvocationTargetException e) {
-				e.printStackTrace();
-				return false;
-			}
-			if (Ret == null) {
-				return false;
-			}
-
-			return true;
-		}
-
-		Random rand = new Random();
-		String ssid = "EPS_";
-		for (int i = 0; i < 6; i++) {
-			ssid += String.valueOf(rand.nextInt(8) + 1);
-		}
-
-		String pass = "";
-		for (int i = 0; i < 20; i++) {
-			pass += String.valueOf(rand.nextInt(9));
-		}
-
-		try {
-			// テザリングの前に一端WIFIを終了する
-			mWifiManager.setWifiEnabled(false);
-
-			WifiConfiguration conf = new WifiConfiguration();
-			conf.SSID = ssid;
-			conf.preSharedKey = pass;
-			conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
-			conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
-			conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
-			mWifiManager.addNetwork(conf);
-
-			Boolean Ret = null;
-			try {
-				Ret = (Boolean) setWifiApState.invoke(mWifiManager, null,false);
-			} catch (IllegalAccessException | InvocationTargetException e) {
-				e.printStackTrace();
-			}
-
-			if (getWifiState()) {
-				m_ap_ssid = ssid;
-				m_ap_pass = pass;
-				return false;
-			} else {
-				return true;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-
-	@RequiresApi(api = Build.VERSION_CODES.O)
-	private Boolean setApState_new(boolean state) {
-		if (!state) {
-			m_ap_ssid = null;
-			m_ap_pass = null;
-
-			try {
-				if (m_ap_state != null) {
-					m_ap_state.close();
-				}
-			} catch (Exception e) {
-				return false;
-			}
-
-			return true;
-		}
-
-
-		WifiManager manager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-		if (manager == null) {
-			return false;
-		}
-
-		manager.startLocalOnlyHotspot(new WifiManager.LocalOnlyHotspotCallback() {
-			@Override
-			public void onStarted(WifiManager.LocalOnlyHotspotReservation reservation) {
-				super.onStarted(reservation);
-				m_ap_state = reservation;
-				WifiConfiguration conf = m_ap_state.getWifiConfiguration();
-				m_ap_ssid = conf.SSID;
-				m_ap_pass = conf.preSharedKey;
-			}
-
-			@Override
-			public void onStopped() {
-				super.onStopped();
-				m_ap_state = null;
-			}
-
-			@Override
-			public void onFailed(int reason) {
-				super.onFailed(reason);
-				m_ap_state = null;
-			}
-		}, new Handler());
-
-		return true;
-	}
-	 */
-
 }

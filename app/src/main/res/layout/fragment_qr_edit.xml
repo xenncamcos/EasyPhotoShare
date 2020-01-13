@@ -14,11 +14,10 @@
             android:id="@+id/txt_1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
             android:text="QRコード提供設定"
             android:textAlignment="center"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
-            android:textColor="#3F51B5"
+            android:textColor="@color/colorPrimary"
             android:visibility="visible" />
         <TextView
             android:id="@+id/main_app_explanation"
@@ -46,7 +45,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
-            android:inputType="textPersonName"
+            android:inputType="text"
             android:textSize="24sp" />
 
 

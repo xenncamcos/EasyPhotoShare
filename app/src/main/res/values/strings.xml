@@ -1,11 +1,11 @@
 <resources>
     <string name="app_name">EasyPhotoShare</string>
     <string name="title_activity_main">EasyPhotoShare</string>
-    <string name="title_activity_qr">QR Code</string>
+    <string name="title_activity_qr">接続QRコード</string>
     <string name="title_activity_settings">高度な設定</string>
 
     <string name="menu_main_setting">高度な設定</string>
-    <string name="menu_main_license">ライセンス</string>
+    <string name="menu_main_license">ライセンス情報</string>
     <string name="menu_main_exit">アプリの終了</string>
 
     <string name="set_server_header">サーバー設定</string>
@@ -22,6 +22,7 @@
     <string name="set_server_delcache">キャッシュの即時削除</string>
     <string name="set_server_delcache_on">サービス終了後にキャッシュを即時に削除</string>
     <string name="set_server_delcache_off">次回アクセス用にキャッシュを維持 (規定値)</string>
+    <string name="title_activity_license">ライセンス情報</string>
 
 
 </resources>
