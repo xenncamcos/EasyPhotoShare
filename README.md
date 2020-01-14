@@ -17,6 +17,8 @@ WANアクセス可能なルーターが存在している場合に限り動作�
 WifiManager.LocalOnlyHotspot()で作成されたネットワークでは正しく動作しません。
 <br>
 
+<!--
 ## サポート
 [Twitter](https://twitter.com/xenncamcos)
 <br>
+-->
