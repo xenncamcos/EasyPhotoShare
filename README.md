@@ -7,8 +7,6 @@
 ## 最新パッケージ
 [Google Play](https://play.google.com/store/apps/details?id=com.silverintegral.easyphotoshare&hl=ja)
 <br>
-[GitHib](app/release/app-release.apk)
-<br>
 
 #### テザリングで利用（推奨）
 テザリングを行う事によって作成されるネットワークを利用します。
