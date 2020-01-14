@@ -163,10 +163,6 @@ public class MainActivity extends AppCompatActivity {
 		}
 
 		m_sv_name = m_sv_name.trim().replace("　", " ").replace(" ", "");
-		if (m_sv_name.equals("")) {
-			m_sv_name = "EasyPhotoShare";
-			editor.putString("SV_NAME", m_sv_name);
-		}
 
 		editor.apply();
 

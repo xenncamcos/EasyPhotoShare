@@ -130,7 +130,6 @@ public class MainService extends Service {
 	private NsdManager.RegistrationListener m_nsd_reg_Listener = null;
 	private NsdManager m_nsd = null;
 	private Context m_context;
-	private String m_note;
 
 
 	public MainService() {
@@ -155,9 +154,7 @@ public class MainService extends Service {
 		//m_maxcache = intent.getExtras().getInt("SV_MAXCACHE");
 		m_delcache = intent.getExtras().getBoolean("SV_DELCACHE");
 
-
 		m_context = getApplication().getApplicationContext();
-		m_note = "EASY PHOTO SHARE";
 
 		ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
 		serviceStart();
@@ -231,7 +228,7 @@ public class MainService extends Service {
 
 
 	private void startHttp() {
-		m_http = new HttpService(m_ip, m_port, m_root_uri, m_note);
+		m_http = new HttpService(m_ip, m_port, m_root_uri);
 		m_http.start();
 	}
 
@@ -309,16 +306,14 @@ public class MainService extends Service {
 		private String s_ip;
 		private int s_port;
 		private String s_root_uri;
-		private String s_note;
 
 		private long m_last_access = 0;
 
 
-		public HttpService(String ip, int port, String root_uri, String note) {
+		public HttpService(String ip, int port, String root_uri) {
 			s_ip = ip;
 			s_port = port;
 			s_root_uri = root_uri;
-			s_note = note;
 
 			s_exec_worker = Executors.newFixedThreadPool(HTTP_MAX_REQUEST_CONNECTION);
 			s_server_sock = null;
@@ -1019,8 +1014,21 @@ public class MainService extends Service {
 				return;
 			}
 
-			String title = m_name.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
-			index_src = index_src.replace("<!--#TITLE#-->", title);
+			String hTitle;
+			String bTitle;
+
+			if (m_name.length() == 0) {
+				hTitle = "EasyPhotoShare";
+				bTitle = "EasyPhotoShare";
+			} else {
+				hTitle = m_name + " | EasyPhotoShare";
+				bTitle = m_name;
+			}
+
+			hTitle = hTitle.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
+			index_src = index_src.replace("<!--#HEADTITLE#-->", hTitle);
+			bTitle = bTitle.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
+			index_src = index_src.replace("<!--#BODYTITLE#-->", bTitle);
 
 			String names = "<script>var img_pos = -1; var img_list = [";
 

@@ -198,9 +198,9 @@ $(function() {
 		img_pos = now;
 	})
 	.on('shown.simplelightbox', function() {
-		if (navigator.userAgent.indexOf('iPhone') > -1 || navigator.userAgent.indexOf('iPad') > -1 || navigator.userAgent.indexOf('iPod') > -1) {
+		/*if (navigator.userAgent.indexOf('iPhone') > -1 || navigator.userAgent.indexOf('iPad') > -1 || navigator.userAgent.indexOf('iPod') > -1) {
 			$('.sl-navigation').append('<div class="sl-org">ORG</div>');
-		} else {
+		} else {*/
 			$('.sl-navigation').append('<div class="sl-org">ORG</div><div class="sl-dl">DL</div>');
 
 			$('.sl-dl').off('click');
@@ -210,7 +210,7 @@ $(function() {
 				e.stopPropagation();
 				return false;
 			});
-		}
+		//}
 		var url = $('.sl-image').parent().find('img').attr('src');
 		if (url.substr(0, 3) == 'qr/') {
 			$('.sl-org').css('display', 'none');
