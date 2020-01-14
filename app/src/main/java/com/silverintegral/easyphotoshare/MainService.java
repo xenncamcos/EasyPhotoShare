@@ -69,6 +69,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileLock;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -84,6 +85,7 @@ import java.util.Date;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -93,7 +95,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 public class MainService extends Service {
 	private final String HTTP_SERVER_NAME = "EPSS/1.0";
-	private final int HTTP_MAX_REQUEST_CONNECTION = 8; // クライアントの最大接続数
+	private final int HTTP_MAX_REQUEST_CONNECTION = 16; // クライアントの最大接続数
 	private final int HTTP_MAX_REQUEST_SIZE = 2048; // リクエストデータの最大サイズ
 	private final int IMAGE_MAX_REQUEST_CONVERT = 8; // 同時画像最適化数
 	private final int IMAGE_MAX_SIZE_S = 300;
@@ -618,7 +620,7 @@ public class MainService extends Service {
 					if (m_keepalive)
 						s_sock.setKeepAlive(true);
 
-					s_sock.setSoTimeout(30);
+					//s_sock.setSoTimeout(30);
 				} catch (SocketException e) {
 					e.printStackTrace();
 					try {
@@ -644,7 +646,7 @@ public class MainService extends Service {
 					return;
 				}
 
-				Boolean use_keepalive = false;
+				Boolean use_keepalive = m_keepalive;
 
 				// HTTP通信
 				while (true) {
@@ -656,8 +658,6 @@ public class MainService extends Service {
 					byte[] data = new byte[HTTP_MAX_REQUEST_SIZE];
 					try {
 						readSize = in.read(data, 0, HTTP_MAX_REQUEST_SIZE);
-					} catch (SocketTimeoutException e) {
-						break;
 					} catch (IOException e) {
 						e.printStackTrace();
 						try {
@@ -682,13 +682,17 @@ public class MainService extends Service {
 
 					if (m_keepalive) {
 						String data_str = new String(data);
-						if (data_str.indexOf("\r\nConnection: close\r\n") == -1) {
+						if (!data_str.contains("\r\nConnection: close\r\n")) {
 							use_keepalive = false;
 						} else {
-							if (data_str.indexOf("keep-alive") != -1)
+							use_keepalive = true;
+							/*
+							if (data_str.contains("keep-alive"))
 								use_keepalive = true;
 							else
 								use_keepalive = false;
+
+							 */
 						}
 					}
 
@@ -709,11 +713,12 @@ public class MainService extends Service {
 						return;
 					}
 
-					if (!use_keepalive || !m_keepalive)
+					if (!use_keepalive)
 						break;
 
 					try {
 						// Keep-Aliveのリクエスト待ち
+						use_keepalive = false;
 						for (int i = 0; i < 11; i++) {
 							if (in.available() != 0) {
 								use_keepalive = true;
@@ -777,6 +782,7 @@ public class MainService extends Service {
 		private WatchService s_watcher = null;
 		private String s_index = null;
 		private TreeMap<String, String> s_images = null;
+		private final Object m_filelock = new Object();
 		ArrayList<String> m_err_files;
 
 
@@ -843,6 +849,7 @@ public class MainService extends Service {
 			Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(rootUri, DocumentsContract.getTreeDocumentId(rootUri));
 			Cursor files = contentResolver.query(childrenUri, SAF_IDX, null, null, null);
 
+			// 画像一覧を作成しながら非同期でサムネイル作成
 			try {
 				String id;
 				String name;
@@ -863,6 +870,8 @@ public class MainService extends Service {
 						}
 					}
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			} finally {
 				if (files != null) {
 					try {
@@ -874,15 +883,15 @@ public class MainService extends Service {
 				}
 			}
 
-			// indexの作成
+			// 画像一覧からindexの作成
 			createIndex(s_images);
 
-			// 不要サムネイルの削除
+			// 本体が存在しないサムネイルを削除
 			try {
 				String name;
 				File[] cacheFiles = new File(getExternalFilesDir(null), s_cachedir).listFiles(new FilenameFilter() {
 					public boolean accept(File file, String str) {
-						return str.endsWith(".s") ? true : false;
+						return str.endsWith(".s");
 					}
 				});
 
@@ -900,6 +909,7 @@ public class MainService extends Service {
 					}
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 
@@ -1064,15 +1074,12 @@ public class MainService extends Service {
 
 				c.close();
 
-				ParcelFileDescriptor parcelFileDescriptor = null;
 				FileDescriptor fileDescriptor = null;
 
 				try {
-					parcelFileDescriptor = getContentResolver().openFileDescriptor(docUri, "r");
-					fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+					fileDescriptor = getContentResolver().openFileDescriptor(docUri, "r").getFileDescriptor();
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
-					//parcelFileDescriptor.close();
 					return null;
 				}
 
@@ -1081,14 +1088,15 @@ public class MainService extends Service {
 
 				byte[] data;
 				if (datasize == 0) {
-					data = new byte[1024 * 1024 * 30];
-					int readSize = bin.read(data, 0, 1024 * 1024 * 30);
+					data = new byte[1024 * 1024 * 20];
+					int readSize = bin.read(data, 0, 1024 * 1024 * 20);
 
 					bin.close();
 					file.close();
 
-					if (readSize == 0)
+					if (readSize == 0 || readSize == 1024 * 1024 * 20) {
 						return null;
+					}
 				} else {
 					data = new byte[datasize];
 					int readSize = bin.read(data, 0, datasize);
@@ -1096,14 +1104,12 @@ public class MainService extends Service {
 					if (datasize != readSize) {
 						bin.close();
 						file.close();
-						parcelFileDescriptor.close();
 						return null;
 					}
 				}
 
 				bin.close();
 				file.close();
-				parcelFileDescriptor.close();
 
 				return data;
 			} catch (IOException e) {
@@ -1143,33 +1149,69 @@ public class MainService extends Service {
 				}
 			}
 
-			try {
-				File t = new File(getExternalFilesDir(null) , s_cachedir + name + "." + type);
-				if (!t.exists()) {
-					Boolean is_exists = false;
-					// 作成を少しだけ待機する
-					for (int i = 0; i < 30; i++) {
-						try {
-							Thread.sleep(300);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-							return null;
-						}
-
-						t = new File(getExternalFilesDir(null) , s_cachedir + name + "." + type);
-						if (t.exists()) {
-							is_exists = true;
-							break;
-						}
+			File t = new File(getExternalFilesDir(null) , s_cachedir + name + "." + type);
+			if (!t.exists()) {
+				Boolean is_exists = false;
+				// 作成を少しだけ待機する
+				for (int i = 0; i < 30; i++) {
+					try {
+						Thread.sleep(300);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+						return null;
 					}
 
-					if (!is_exists)
-						return null;
+					t = new File(getExternalFilesDir(null) , s_cachedir + name + "." + type);
+					if (t.exists()) {
+						is_exists = true;
+						break;
+					}
 				}
 
-				FileInputStream file = new FileInputStream(new File(getExternalFilesDir(null) , s_cachedir + name + "." + type));
-				BufferedInputStream bin = new BufferedInputStream(file);
+				if (!is_exists)
+					return null;
+			}
 
+
+			FileInputStream file = null;
+			try {
+				file = new FileInputStream(new File(getExternalFilesDir(null) , s_cachedir + name + "." + type));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+
+			/*FileLock lock = null;
+			int trycou = 0;
+			while (true) {
+				try {
+					lock = file.getChannel().lock();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+				if (lock != null)
+					break;
+
+				trycou++;
+				if (trycou >= 5) {
+					try {
+						file.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					return null;
+				}
+
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}*/
+
+			BufferedInputStream bin = new BufferedInputStream(file);
+
+			try {
 				int datasize = (int)t.length();
 
 				byte[] data = new byte[datasize];
@@ -1177,17 +1219,17 @@ public class MainService extends Service {
 
 				if (readSize != datasize) {
 					bin.close();
+					//lock.release();
 					file.close();
 					return null;
 				}
 
 				bin.close();
+				//lock.release();
 				file.close();
 
 				return data;
 			} catch (IOException e) {
-				return null;
-			} catch (Exception e) {
 				return null;
 			}
 		}
@@ -1208,6 +1250,9 @@ public class MainService extends Service {
 			String ts_old = null;
 			String name = c.getString(SAF_NAME);
 			c.close();
+
+			if (name.length() == 0)
+				return;
 
 			if (name.startsWith("jit_")) {
 				// デバッグ用
@@ -1263,6 +1308,16 @@ public class MainService extends Service {
 				return;
 			}
 
+			ExifInterface exif;
+			try {
+				exif = new ExifInterface(fileDescriptor);
+			} catch (IOException e) {
+				e.printStackTrace();
+				m_err_files.add(name);
+				file_t.delete();
+				return;
+			}
+
 			// サムネイル作成
 			Bitmap srcImg = BitmapFactory.decodeFileDescriptor(fileDescriptor);
 			if (srcImg == null) {
@@ -1276,16 +1331,6 @@ public class MainService extends Service {
 				return;
 			}
 
-
-			ExifInterface exif;
-			try {
-				exif = new ExifInterface(fileDescriptor);
-			} catch (IOException e) {
-				e.printStackTrace();
-				m_err_files.add(name);
-				file_t.delete();
-				return;
-			}
 			int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
 
 			if (orientation == ExifInterface.ORIENTATION_ROTATE_90)
@@ -1342,9 +1387,11 @@ public class MainService extends Service {
 			try {
 				file_s.createNewFile();
 				FileOutputStream fOut = new FileOutputStream(file_s);
+				//FileLock lock = fOut.getChannel().lock();
 				dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
 
 				fOut.flush();
+				//lock.release();
 				fOut.close();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -1388,9 +1435,11 @@ public class MainService extends Service {
 			try {
 				file_m.createNewFile();
 				FileOutputStream fOut = new FileOutputStream(file_m);
+				//FileLock lock = fOut.getChannel().lock();
 				dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
 
 				fOut.flush();
+				//lock.release();
 				fOut.close();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
