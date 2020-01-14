@@ -7,8 +7,6 @@
 ## 最新パッケージ
 [Google Play](https://play.google.com/store/apps/details?id=com.silverintegral.easyphotoshare&hl=ja)
 <br>
-[GitHib](app/release/app-release.apk)
-<br>
 
 #### テザリングで利用（推奨）
 テザリングを行う事によって作成されるネットワークを利用します。
@@ -22,10 +20,3 @@ WifiManager.LocalOnlyHotspot()で作成されたネットワークでは正し�
 ## サポート
 [Twitter](https://twitter.com/xenncamcos)
 <br>
-
-## 更新期歴
-#### 2020-01-09 1.1.3
-GooglePlayでの公開にあたり最適化
-
-#### 2020-01-06 1.0.5
-初ソースコード公開
