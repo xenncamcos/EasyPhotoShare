@@ -20,10 +20,3 @@ WifiManager.LocalOnlyHotspot()で作成されたネットワークでは正し�
 ## サポート
 [Twitter](https://twitter.com/xenncamcos)
 <br>
-
-## 更新期歴
-#### 2020-01-09 1.1.3
-GooglePlayでの公開にあたり最適化
-
-#### 2020-01-06 1.0.5
-初ソースコード公開
