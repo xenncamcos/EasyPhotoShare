@@ -525,7 +525,7 @@ public class MainActivity extends AppCompatActivity {
 			else
 				port = ":" + port;
 
-			String html = "<b>サービス実行中</b><br>"
+			String html = "<b>実行中</b><br>"
 					+ "<a href=\"http://" + m_sv_ip + ":8088\">http://" + m_sv_ip + port + "</a><br><br>"
 					+ "<b>PATH:</b> " + m_sv_root_disp + "<br>"
 					+ "<b>TYPE:</b> " + getNetworkType() + "<br>";
@@ -559,7 +559,7 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(R.id.main_chk_hotspot).setEnabled(true);
 
 
-			String html = "<b>サービス停止中</b><br><br><br><br><br>";
+			String html = "<b>停止中</b><br><br><br><br><br>";
 
 			TextView tv_info = findViewById(R.id.main_txt_info_view);
 			tv_info.setText(fromHtml(html, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL));

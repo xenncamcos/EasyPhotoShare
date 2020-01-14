@@ -1,57 +1,28 @@
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="theme-color" content="#000" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0" />
-    <title><!--#TITLE#--></title>
-    <link type="text/css" rel="stylesheet" href="simplelightbox.css" />
-    <link type="text/css" rel="stylesheet" href="std.css" />
-    <script type="text/javascript" src="jquery.js"></script>
-    <script type="text/javascript" src="long-press-event.min.js"></script>
-    <script type="text/javascript" src="simple-lightbox.js"></script>
-    <script type="text/javascript" src="std.js"></script>
-<!--#HEAD#-->
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="theme-color" content="#000" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0" />
+	<title><!--#TITLE#--> | EASYPHOTOSHARE</title>
+	<link type="text/css" rel="stylesheet" href="lightbox.css" />
+	<link type="text/css" rel="stylesheet" href="std.css" />
+	<link rel="icon" type="image/png" href="favicon.png">
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript" src="lightbox.js"></script>
+	<script type="text/javascript" src="std.js"></script>
+	<!--#HEAD#-->
 </head>
 <body>
-<!-- <header>
-    <div id="sp_title" class="sp_only"><img src="top_sp.webp" /></div>
-    <div id="pc_title" class="pc_only"><img src="top_pc.webp" /></div>
-</header> -->
 <header><div id="title"><!--#TITLE#--></div></header>
 <div id="main">
-    <!--<div id="action">
-        <a class="btn_orange" href="#" id="sel_start">選択DL</a>&nbsp;
-        <a class="btn_orange" href="XXXXXXXX">ZIPで全てDL</a>&nbsp;
-<script>
-    if (/iP(hone|(o|a)d)/.test(navigator.userAgent)) {
-        document.write('<span class="sp_only">長押し原寸DL</span>');
-    } else {
-        document.write('<span class="sp_only">長押し原寸表示</span>');
-    }
-</script>
-    </div>
-    <hr />-->
-    <div id="note"><!--#NOTE#--></div>
-    <table id="lightbox-margin-table"><tr><td id="lightbox-margin"></td><td><div id="lightbox" class="lightbox">
-<!--#CONTENT#-->
-    </div></td></tr></table>
-    <div id="count"><!--#COUNT#--></div>
-    <hr />
-    <div id="credit">EASY PHOTO SHARE</div>
-    <!-- <div style="text-align:center;margin-top:10px;line-height:1.5em">
-        <span style="color:orange;font-size:0.8em">"全てDL"の初回は時間がかかる事があります</span>
-        <span class="sp_only"><br /></span><span class="pc_only">　</span>
-        <span style="color:orange;font-size:0.8em">"選択DL"は数が多いと時間がかかります</span>
-    </div> -->
+<table id="lightbox-margin-table"><tr><td id="lightbox-margin"></td><td>
+<div id="lightbox" class="lightbox"><!--#CONTENT#--></div>
+</td></tr></table>
+<div id="count"><!--#COUNT#--></div>
+<hr />
+<div id="credit"><a href="https://github.com/xenncamcos/EasyPhotoShare" target="_blank">EASY PHOTO SHARE</a></div>
 </div>
-<!-- <footer>
-    <div id="sp_bottom" class="sp_only"><img src="bottom_sp.webp" /></div>
-    <div id="pc_bottom" class="pc_only"><img src="bottom_pc.webp" /></div>
-</footer> -->
-<div id="dlpanel">
-    <a href="#" id="sel_cancel">キャンセル</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp
-    <a href="#" id="sel_dl">ダウンロード</a>
-</div>
+<div id="dlpanel"><a href="#" id="sel_cancel">キャンセル</a><a href="#" id="sel_dl">ダウンロード</a></div>
 <!--#SCRIPT#-->
 </body>
 </html>

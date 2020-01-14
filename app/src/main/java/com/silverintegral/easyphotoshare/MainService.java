@@ -332,7 +332,11 @@ public class MainService extends Service {
 				return;
 			}
 
+			Date dt = new Date();
+
 			if (m_autokilll) {
+				m_last_access = dt.getTime();
+
 				// 30分未接続で自動停止
 				new Thread(new Runnable() {
 					@Override
@@ -358,8 +362,6 @@ public class MainService extends Service {
 					}
 				}).start();
 			}
-
-			Date dt = new Date();
 
 			while (true) {
 				try {
@@ -767,7 +769,7 @@ public class MainService extends Service {
 
 
 
-	// 画像最適化用サーバー
+	// 画像最適化用サーバー（Indexも作成している）
 	private class ImageService extends Thread {
 		private ExecutorService s_exec_worker;
 		private String s_root_uri = null;
@@ -1010,7 +1012,7 @@ public class MainService extends Service {
 			String title = m_name.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
 			index_src = index_src.replace("<!--#TITLE#-->", title);
 
-			String names = "<script>var imgp = -1; var imgs = [";
+			String names = "<script>var img_pos = -1; var img_list = [";
 
 			String content = "<!--START-->\n";
 			for (String key : images.keySet()) {

@@ -43,27 +43,9 @@ a {
 	color: #f66;
 }
 
-/* footer {
-	position:absolute;
-	bottom:0;
-} */
-
 #main {
 	padding: 0;
 	margin: 0;
-}
-
-#pc_title {
-	width: 100%;
-	text-align: center;
-	border-bottom: solid 2px #888;
-	margin-bottom: 30px;
-}
-
-#pc_title img {
-	display: inline-block;
-	width: 100%;
-	height: auto;
 }
 
 #pc_bottom {
@@ -111,30 +93,22 @@ a {
 }
 
 #title {
-	font-size:1.5em;
-	font-weight:bold;
-	text-align:center;
-	color:orange;
-	margin:4px 0 10px 0;
+	font-size: 1.5em;
+	font-weight: bold;
+	text-align: center;
+	color: orange;
+	margin: 10px 0;
 }
 
 #action {
-	text-align:center;
-	margin:10px
+	text-align: center;
+	margin: 10px
 }
 
 #count {
-	color:gray;
-	margin:10px;
-	text-align:center
-}
-
-#note {
-	color:gray;
-	margin:10px;
-	text-align:center;
-	word-break:keep-all;
-	overflow-wrap:break-word;
+	color: gray;
+	margin: 10px;
+	text-align: center
 }
 
 #lightbox {
@@ -174,6 +148,11 @@ a {
 	padding: 15px;
 }
 
+#dlpanel a {
+	display: inline-block;
+	margin-right: 15px;
+}
+
 #screen_img {
 	display: block;
 }
@@ -183,10 +162,16 @@ a {
     margin: 10px 0;
 }
 
+#credit a {
+	text-decoration:none;
+	color:#fff;
+}
+
 .sbox {
 	position: relative;
 	margin: 5px;
-	width: 200px;height:200px;
+	width: 200px;
+	height: 200px;
 	display: inline-block;
 	background-color: #222;
 	cursor: pointer;
@@ -284,7 +269,6 @@ a {
 }
 
 @media screen and (max-width:480px) {
-
 	body {
 		margin: 0 0 0 0;
 		padding: 0;
@@ -294,13 +278,6 @@ a {
 		border: solid 1px #fff;
 		margin: 1%;
 	}
-
-	/* footer {
-		position:absolute;
-		bottom:0;
-		width:100%;
-		height:auto;
-	} */
 
 	span.sp_only {
 		display: inline;
@@ -348,7 +325,6 @@ a {
 
 
 @media screen and (max-width:896px) and (orientation:landscape) {
-
 	hr {
 		border: solid 1px #fff;
 		margin: 1%;
