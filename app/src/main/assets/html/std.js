@@ -78,9 +78,11 @@ $(function() {
 
 	$('.simg').on('click', function() {
 		now = img_list.indexOf($(this).attr('title'));
-		$('.sbox:nth-of-type(' + (now + 1) + ')').css('border', 'solid 2px #8af');
-		$('.sbox:nth-of-type(' + (img_pos + 1) + ')').css('border', 'solid 2px #666');
-		img_pos = now;
+		if (now != img_pos) {
+			$('.sbox:nth-of-type(' + (now + 1) + ')').css('border', 'solid 2px #8af');
+			$('.sbox:nth-of-type(' + (img_pos + 1) + ')').css('border', 'solid 2px #666');
+			img_pos = now;
+		}
 
 		if (sel_mode > 0) {
 			var title = $(this).attr('title');
@@ -111,14 +113,14 @@ $(function() {
 
 	$('.sbox').on('longpress', function(e) {
 		if (sel_mode == 0) {
-			/*if (navigator.userAgent.indexOf('iPhone') > -1 || navigator.userAgent.indexOf('iPad') > -1 || navigator.userAgent.indexOf('iPod') > -1) {
+			if (navigator.userAgent.indexOf('iPhone') > -1 || navigator.userAgent.indexOf('iPad') > -1 || navigator.userAgent.indexOf('iPod') > -1) {
 				// iPhoneはDL
 		        var link = document.createElement('a');
 		        document.body.appendChild(link);
 		        link.href = $(this).attr('url').replace('data/', 'data/d/');
 		        link.click();
 		        document.body.removeChild(link);
-			} else {*/
+			} else {
 				// Androidは複数選択
 				sel_list = [];
 				sel_mode = 1;
@@ -128,7 +130,7 @@ $(function() {
 
 				// 1つ目を選択
 				$(this).find('img').click();
-			//}
+			}
 
 			e.preventDefault();
 			return false;
@@ -189,9 +191,11 @@ $(function() {
 		var title = $('.sl-image').find('img').attr('src');
 		title = title.substring(title.lastIndexOf('/') + 1);
 		var now = img_list.indexOf(title);
-		$('.sbox:nth-of-type(' + (now + 1) + ')').css('border', 'solid 2px #8af');
-		$('.sbox:nth-of-type(' + (img_pos + 1) + ')').css('border', 'solid 2px #666');
-		img_pos = now;
+		if (now != img_pos) {
+			$('.sbox:nth-of-type(' + (now + 1) + ')').css('border', 'solid 2px #8af');
+			$('.sbox:nth-of-type(' + (img_pos + 1) + ')').css('border', 'solid 2px #666');
+			img_pos = now;
+		}
 	})
 	.on('shown.simplelightbox', function() {
 		/*if (navigator.userAgent.indexOf('iPhone') > -1 || navigator.userAgent.indexOf('iPad') > -1 || navigator.userAgent.indexOf('iPod') > -1) {

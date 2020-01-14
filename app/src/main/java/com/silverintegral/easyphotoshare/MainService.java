@@ -94,14 +94,14 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 
 public class MainService extends Service {
-	private final String HTTP_SERVER_NAME = "EPSS/1.0";
+	private final String HTTP_SERVER_NAME = "EPSSERVER/1.0";
 	private final int HTTP_MAX_REQUEST_CONNECTION = 16; // クライアントの最大接続数
 	private final int HTTP_MAX_REQUEST_SIZE = 2048; // リクエストデータの最大サイズ
-	private final int IMAGE_MAX_REQUEST_CONVERT = 8; // 同時画像最適化数
+	private final int IMAGE_MAX_REQUEST_CONVERT = 4; // 同時画像最適化数
 	private final int IMAGE_MAX_SIZE_S = 200;
 	private final int IMAGE_MAX_SIZE_M = 1200;
 
-	private String[] SAF_IDX = new String[] {
+	private final String[] SAF_IDX = new String[] {
 			DocumentsContract.Document.COLUMN_DOCUMENT_ID,
 			DocumentsContract.Document.COLUMN_DISPLAY_NAME,
 			DocumentsContract.Document.COLUMN_MIME_TYPE,
@@ -842,25 +842,24 @@ public class MainService extends Service {
 
 			Uri rootUri = Uri.parse(m_root_uri);
 			Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(rootUri, DocumentsContract.getTreeDocumentId(rootUri));
-			Cursor files = contentResolver.query(childrenUri, SAF_IDX, null, null, null);
+			Cursor files = contentResolver.query(childrenUri, SAF_IDX, null, null, "NAME");
 
 			// 画像一覧を作成しながら非同期でサムネイル作成
 			try {
 				String id;
 				String name;
-				String lname;
+				String name_l;
 				String mime;
 
 				while (files != null && files.moveToNext()) {
 					id = files.getString(SAF_ID);
 					name = files.getString(SAF_NAME);
 					mime = files.getString(SAF_MIME);
-					lname = name.toLowerCase();
+					name_l = name.toLowerCase();
 
-					if (id.length() > 0 && !DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
-						if (lname.endsWith(".jpg") || lname.endsWith(".jpeg") || lname.endsWith(".png") || lname.endsWith(".bmp")) {
+					if (mime.startsWith("image/") && !DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+						if (name_l.endsWith(".jpg") || name_l.endsWith(".jpeg") || name_l.endsWith(".png") || name_l.endsWith(".bmp")) {
 							s_images.put(name, id);
-
 							s_exec_worker.submit(new ImageWorker(id));
 						}
 					}
@@ -1265,9 +1264,8 @@ public class MainService extends Service {
 				try {
 					StringBuilder builder = new StringBuilder();
 					BufferedReader reader = new BufferedReader(new FileReader(getExternalFilesDir(null) + "/" + s_cachedir + name + ".t"));
-					String str = reader.readLine();
-					ts_old = str;
-				} catch (IOException e) {
+					ts_old = reader.readLine();
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 
@@ -1281,7 +1279,7 @@ public class MainService extends Service {
 				FileWriter filewriter = new FileWriter(file_t);
 				filewriter.write(ts_new);
 				filewriter.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				m_err_files.add(name);
 				return;
@@ -1291,37 +1289,46 @@ public class MainService extends Service {
 			ParcelFileDescriptor parcelFileDescriptor = null;
 			FileDescriptor fileDescriptor = null;
 
-			try {
-				parcelFileDescriptor = getContentResolver().openFileDescriptor(docUri, "r");
-				fileDescriptor = parcelFileDescriptor.getFileDescriptor();
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+			// サムネイル作成
+			Bitmap srcImg = null;
+
+			if (name.toLowerCase().endsWith(".arw")) {
+				/*
+				ContentResolver resolver = getContentResolver();
+				String[] openableMimeTypes = resolver.getStreamTypes(docUri, "image/jpeg");
 				try {
+					InputStream inputStream =
+							resolver.openTypedAssetFileDescriptor(docUri, openableMimeTypes[0], null).createInputStream();
+					srcImg = BitmapFactory.decodeStream(inputStream);
+				} catch (Exception e) {
+					e.printStackTrace();
+					m_err_files.add(name);
 					file_t.delete();
-					parcelFileDescriptor.close();
-				} catch (IOException ex) {
+					return;
 				}
-				m_err_files.add(name);
-				return;
+				 */
+			} else {
+				try {
+					parcelFileDescriptor = getContentResolver().openFileDescriptor(docUri, "r");
+					fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+					srcImg = BitmapFactory.decodeFileDescriptor(fileDescriptor);
+				} catch (Exception e) {
+					e.printStackTrace();
+					m_err_files.add(name);
+					file_t.delete();
+					return;
+				}
 			}
 
-			// サムネイル作成
-			Bitmap srcImg = BitmapFactory.decodeFileDescriptor(fileDescriptor);
 			if (srcImg == null) {
-				try {
-					file_t.delete();
-					parcelFileDescriptor.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				m_err_files.add(name);
+				file_t.delete();
 				return;
 			}
 
 			ExifInterface exif;
 			try {
 				exif = new ExifInterface(fileDescriptor);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				m_err_files.add(name);
 				file_t.delete();
@@ -1382,20 +1389,13 @@ public class MainService extends Service {
 			}
 
 			try {
-
 				file_s.createNewFile();
 				FileOutputStream fOut = new FileOutputStream(file_s);
 				dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
 
 				fOut.flush();
 				fOut.close();
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-				m_err_files.add(name);
-				file_t.delete();
-				file_s.delete();
-				return;
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				m_err_files.add(name);
 				file_t.delete();
@@ -1435,14 +1435,7 @@ public class MainService extends Service {
 
 				fOut.flush();
 				fOut.close();
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-				m_err_files.add(name);
-				file_t.delete();
-				file_s.delete();
-				file_m.delete();
-				return;
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				m_err_files.add(name);
 				file_t.delete();
@@ -1455,7 +1448,7 @@ public class MainService extends Service {
 				parcelFileDescriptor.close();
 			} catch (IOException e) {
 				e.printStackTrace();
-				m_err_files.add(name);
+				//m_err_files.add(name);
 			}
 		}
 
