@@ -6,10 +6,12 @@ if (navigator.userAgent.toLowerCase().indexOf(' line/') > -1) {
 	}
 }
 
+
 var lp_time = 500;
 var lp_timer = null;
 var lp_startX;
 var lp_startX;
+
 $(window).on("touchstart", function(e) {
 	if (lp_timer)
 		clearTimeout(lp_timer);
@@ -37,24 +39,6 @@ var sel_pos = 0;
 var sel_list = [];
 
 
-$(window).on('load', function() {
-	$('.simg').on('load', function() {
-		//$(this).css('padding', '0').css('height', 'auto').animate({opacity: '1'}, 300);
-		$(this).css('padding', '0').css('height', 'auto').css('opacity', '1');
-	});
-
-    $('.simg').on('error', function() {
-        setTimeout(function() {
-		    $(this).attr('src', '');
-		    $(this).attr('src', $(this).attr('s'));
-        }, 1000);
-    });
-
-	$('.simg').each(function() {
-		$(this).attr('src', $(this).attr('s'));
-	});
-});
-
 $(function() {
 	$(window).on('resize', function() {
 		var body = $('html').width() - 20 - 6;
@@ -70,6 +54,23 @@ $(function() {
 	});
 	$(window).resize();
 	$('#lightbox-margin-table').css('opacity','1');
+
+	$('.simg').on('load', function() {
+		$(this).css('padding', '0').css('height', 'auto').animate({opacity: '1'}, 300);
+		//$(this).css('padding', '0').css('height', 'auto').css('opacity', '1');
+	});
+
+	$('.simg').on('error', function() {
+		setTimeout(function() {
+			$(this).attr('src', '');
+			$(this).attr('src', $(this).attr('s'));
+		}, 1000);
+	});
+
+	$('.simg').each(function() {
+		$(this).attr('src', $(this).attr('s'));
+	});
+
 
 	$('.simg').on('click', function() {
 

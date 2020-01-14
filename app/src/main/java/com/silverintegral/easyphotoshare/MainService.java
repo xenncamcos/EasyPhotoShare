@@ -1316,16 +1316,6 @@ public class MainService extends Service {
 				return;
 			}
 
-			ExifInterface exif;
-			try {
-				exif = new ExifInterface(fileDescriptor);
-			} catch (IOException e) {
-				e.printStackTrace();
-				m_err_files.add(name);
-				file_t.delete();
-				return;
-			}
-
 			// サムネイル作成
 			Bitmap srcImg = BitmapFactory.decodeFileDescriptor(fileDescriptor);
 			if (srcImg == null) {
@@ -1336,6 +1326,16 @@ public class MainService extends Service {
 					e.printStackTrace();
 				}
 				m_err_files.add(name);
+				return;
+			}
+
+			ExifInterface exif;
+			try {
+				exif = new ExifInterface(fileDescriptor);
+			} catch (IOException e) {
+				e.printStackTrace();
+				m_err_files.add(name);
+				file_t.delete();
 				return;
 			}
 
@@ -1393,13 +1393,12 @@ public class MainService extends Service {
 			}
 
 			try {
+
 				file_s.createNewFile();
 				FileOutputStream fOut = new FileOutputStream(file_s);
-				//FileLock lock = fOut.getChannel().lock();
 				dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
 
 				fOut.flush();
-				//lock.release();
 				fOut.close();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -1443,11 +1442,9 @@ public class MainService extends Service {
 			try {
 				file_m.createNewFile();
 				FileOutputStream fOut = new FileOutputStream(file_m);
-				//FileLock lock = fOut.getChannel().lock();
 				dstImg.compress(Bitmap.CompressFormat.JPEG, 75, fOut);
 
 				fOut.flush();
-				//lock.release();
 				fOut.close();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
