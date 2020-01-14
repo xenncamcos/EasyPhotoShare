@@ -1,8 +1,6 @@
 if (navigator.userAgent.toLowerCase().indexOf(' line/') > -1) {
 	if (navigator.userAgent.indexOf('Android') > -1) {
 		location.replace('intent://' + location.host + '#Intent;scheme=' + location.protocol.replace(':', '') + ';package=com.android.chrome;end');
-	//} else {
-	//	location.replace(location.origin + location.pathname.replace(new RegExp("(?:\\\/+[^\\\/]*){0,1}$"), "/") + data['path']);
 	}
 }
 
@@ -12,6 +10,7 @@ var lp_timer = null;
 var lp_startX;
 var lp_startX;
 
+// ロングタップのイベント
 $(window).on("touchstart", function(e) {
 	if (lp_timer)
 		clearTimeout(lp_timer);
@@ -38,8 +37,8 @@ var sel_mode = 0;
 var sel_pos = 0;
 var sel_list = [];
 
-
 $(function() {
+	// PCレイアウトの調整
 	$(window).on('resize', function() {
 		var body = $('html').width() - 20 - 6;
 		var cou = Math.floor(body / 210);
@@ -51,13 +50,17 @@ $(function() {
 			$('#lightbox-margin').css('width', Math.floor((body - cou * 210) / 2) + 'px');
 			$('#lightbox-margin-table').css('margin', '0');
 		}
+
+		$('body').css('display', 'block');
 	});
+
 	$(window).resize();
 	$('#lightbox-margin-table').css('opacity','1');
 
+
+	// 画像読み込み処理
 	$('.simg').on('load', function() {
-		$(this).css('padding', '0').css('height', 'auto').animate({opacity: '1'}, 300);
-		//$(this).css('padding', '0').css('height', 'auto').css('opacity', '1');
+		$(this).css('padding', '0').css('height', 'auto').animate({opacity: '1'}, 400);
 	});
 
 	$('.simg').on('error', function() {
@@ -72,8 +75,8 @@ $(function() {
 	});
 
 
-	$('.simg').on('click', function() {
 
+	$('.simg').on('click', function() {
 		now = img_list.indexOf($(this).attr('title'));
 		$('.sbox:nth-of-type(' + (now + 1) + ')').css('border', 'solid 2px #8af');
 		$('.sbox:nth-of-type(' + (img_pos + 1) + ')').css('border', 'solid 2px #666');
@@ -146,14 +149,6 @@ $(function() {
 		return false;
 	});
 
-/*
-	$('#sel_reset').on('click', function() {
-		sel_list = [];
-		$('.bbox').css('background-color', '#000').css('opacity', '0.5');
-
-		return false;
-	});
-*/
 	$('#sel_dl').on('click', function() {
 		if (sel_list.length == 0)
 			return false;

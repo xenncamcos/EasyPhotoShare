@@ -98,8 +98,8 @@ public class MainService extends Service {
 	private final int HTTP_MAX_REQUEST_CONNECTION = 16; // クライアントの最大接続数
 	private final int HTTP_MAX_REQUEST_SIZE = 2048; // リクエストデータの最大サイズ
 	private final int IMAGE_MAX_REQUEST_CONVERT = 8; // 同時画像最適化数
-	private final int IMAGE_MAX_SIZE_S = 300;
-	private final int IMAGE_MAX_SIZE_M = 2000;
+	private final int IMAGE_MAX_SIZE_S = 200;
+	private final int IMAGE_MAX_SIZE_M = 1200;
 
 	private String[] SAF_IDX = new String[] {
 			DocumentsContract.Document.COLUMN_DOCUMENT_ID,
@@ -406,21 +406,21 @@ public class MainService extends Service {
 			if (name == null) {
 				// ファイル名が存在しない
 				response = getAssetFile("_badrequest.html");
-				return addHeader(response, "400 Bad Request", "text/html", null);
+				return addHeader(response, "400 Bad Request", "text/html");
 			} else if (name.length() == 0) {
 				// トップページ
 				response = m_image.getIndex();
-				return addHeader(response, "200 OK", "text/html", null);
+				return addHeader(response, "200 OK", "text/html");
 			} else if (name.equals("license")) {
 				// ライセンスページ
 				response = getAssetFile("_license.html");
-				return addHeader(response, "200 OK", "text/plain", null);
+				return addHeader(response, "200 OK", "text/plain");
 			} else {
 				// アクセス禁止ファイル
 				String is = name.substring(0, 1);
 				if (is.equals(".") || is.equals("_")) {
 					response = getAssetFile("_forbidden.html");
-					return addHeader(response, "403 Forbidden", "text/html", null);
+					return addHeader(response, "403 Forbidden", "text/html");
 				}
 			}
 
@@ -429,88 +429,58 @@ public class MainService extends Service {
 				// サムネイルS
 				response = m_image.getImage_s(name.substring(7));
 				if (response == null)
-					response = getAssetFile("err_s.webp");
+					response = getAssetFile("err_s.jpg");
 				type = "image/jpeg";
 			} else if (name.length() > 7 && name.startsWith("data/m/")) {
 				// サムネイルM
 				response = m_image.getImage_m(name.substring(7));
 				if (response == null)
-					response = getAssetFile("err_m.webp");
+					response = getAssetFile("err_m.jpg");
 				type = "image/jpeg";
 			} else if (name.length() > 4 && name.startsWith("data/d/")) {
 				// スマホ内の画像データ（ダウンロード）
-				response = m_image.getImage(name.substring(7));
-				if (response == null)
-					response = getAssetFile("err_m.webp");
-
-				if (name.endsWith(".jpg") || name.endsWith(".jpeg"))
-					type = "image/jpeg";
-				else if (name.endsWith(".webp"))
-					type = "image/webp";
-				else if (name.endsWith(".png"))
-					type = "image/png";
-				else if (name.endsWith(".bmp"))
-					type = "image/bitmap";
-
-				if (response != null) {
-					return addHeader_dl(response, "200 OK", type, name.substring(3));
-				}
+				return ImageResponse(request, true);
 			} else if (name.length() > 5 && name.startsWith("data/")) {
 				// スマホ内の画像データ
-				response = m_image.getImage(name.substring(5));
-				if (response == null)
-					response = getAssetFile("err_m.webp");
-
-				if (name.endsWith(".jpg") || name.endsWith(".jpeg"))
-					type = "image/jpeg";
-				else if (name.endsWith(".png"))
-					type = "image/png";
-				else if (name.endsWith(".bmp"))
-					type = "image/bitmap";
+				return ImageResponse(request, false);
 			} else {
 				// HTML等のシステムデータ
-				if (name.lastIndexOf(".") == -1) {
-					// 拡張子が存在しない場合はhtmとして対応
-					response = getAssetFile(name + ".htm");
-					type = "text/html";
-				} else {
-					response = getAssetFile(name);
-					type = name.substring(name.lastIndexOf("."));
+				response = getAssetFile(name);
 
-					if (type.equals(".htm") || type.equals(".html")) {
-						type = "text/html";
-					} else if (type.equals(".css")) {
-						type = "text/css";
-					} else if (type.equals(".js")) {
-						type = "text/javascript";
-					} else if (type.equals(".txt")) {
-						type = "text/plain";
-					} else if (type.equals(".png")) {
-						type = "image/png";
-					} else if (type.equals(".jpg") || type.equals(".jpeg")) {
-						type = "image/jpeg";
-					} else {
-						type = "application/octet-stream";
-					}
+				if (name.endsWith(".html")) {
+					type = "text/html";
+				} else if (name.endsWith(".css")) {
+					type = "text/css";
+				} else if (name.endsWith(".js")) {
+					type = "text/javascript";
+				} else if (name.endsWith(".txt")) {
+					type = "text/plain";
+				} else if (name.endsWith(".png")) {
+					type = "image/png";
+				} else if (name.endsWith(".jpg") || type.equals(".jpeg")) {
+					type = "image/jpeg";
+				} else {
+					type = "application/octet-stream";
 				}
 			}
 
 			// 要求データが存在しなかった
 			if (response == null) {
 				response = getAssetFile("_notfound.html");
-				return addHeader(response, "404 Not Found", "text/html", null);
+				return addHeader(response, "404 Not Found", "text/html");
 			}
 
-			return addHeader(response, "200 OK", type, null);
+			return addHeader(response, "200 OK", type);
 		}
 
-		private byte[] addHeader(byte[] data, String code, String type, String addHead) {
+
+		private byte[] addHeader(byte[] data, String code, String type) {
 			String str_head =
 				"HTTP/1.1 " + code + "\r\n"
 				+ "Server: " + HTTP_SERVER_NAME + "\r\n"
-				+ "Content-Type: " + type + "; charset=utf-8\r\n"
+				+ "Content-Type: " + type + "\r\n"
 				+ "Content-Length: " + data.length + "\r\n"
-				+ addHead;
+				+ "Cache-Cotrol: max-age=86400, no-transform\r\n";
 
 			if (m_keepalive)
 				str_head += "Keep-Alive: timeout=5, max=20\r\nConnection: Keep-Alive\r\n";
@@ -527,22 +497,52 @@ public class MainService extends Service {
 			return ret.array();
 		}
 
-		private byte[] addHeader_dl(byte[] data, String code, String type, String name) {
-			String str_head =
-				"HTTP/1.1 " + code + "\r\n"
-				+ "Server: " + HTTP_SERVER_NAME + "\r\n"
-				+ "Content-Type: " + type + "; charset=utf-8\r\n"
-				+ "Content-Length: " + data.length + "\r\n"
-				+ "Content-Disposition: attachment; filename=\"" + name + "\"\r\n"
-				+ "Connection: close\r\n\r\n";
+
+		// スマホ内の画像データを返す
+		private byte[] ImageResponse(byte[] request, Boolean is_dl) {
+			byte[] response = null;
+
+			String type = "";
+			String name = getRequestFileName(request);
+			String name_l = name.toLowerCase();
+
+			response = m_image.getImage(name.substring(5));
+			if (response == null)
+				response = getAssetFile("err_m.jpg");
+
+			if (name_l.endsWith(".jpg") || name_l.endsWith(".jpeg"))
+				type = "image/jpeg";
+			else if (name_l.endsWith(".png"))
+				type = "image/png";
+			else if (name_l.endsWith(".bmp"))
+				type = "image/bitmap";
+
+			String str_head = "HTTP/1.1 200\r\n"
+					+ "Server: " + HTTP_SERVER_NAME + "\r\n"
+					+ "Content-Type: " + type + "\r\n"
+					+ "Content-Length: " + response.length + "\r\n"
+					+ "Cache-Cotrol: max-age=86400, no-transform\r\n";
+
+			if (is_dl) {
+				str_head += "Content-Disposition: attachment; filename=\"" + name + "\"\r\n"
+						+ "Connection: close\r\n";
+			} else {
+				if (m_keepalive)
+					str_head += "Keep-Alive: timeout=5, max=20\r\nConnection: Keep-Alive\r\n";
+				else
+					str_head += "Connection: close\r\n";
+			}
+
+			str_head += "\r\n";
 
 			byte[] head = str_head.getBytes();
-
-			ByteBuffer ret = ByteBuffer.allocate(head.length + data.length);
+			ByteBuffer ret = ByteBuffer.allocate(head.length + response.length);
 			ret.put(head);
-			ret.put(data);
+			ret.put(response);
+
 			return ret.array();
 		}
+
 
 		private String getRequestFileName(byte[] request) {
 			String head;
@@ -1025,25 +1025,27 @@ public class MainService extends Service {
 				bTitle = m_name;
 			}
 
-			hTitle = hTitle.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
+			hTitle = hTitle.replace("&", "&amp;").replace("\"", "&quot;")
+					.replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
 			index_src = index_src.replace("<!--#HEADTITLE#-->", hTitle);
-			bTitle = bTitle.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
+			bTitle = bTitle.replace("&", "&amp;").replace("\"", "&quot;")
+					.replace("<", "&lt;").replace(">", "&gt;").replace("'", "&#39;");
 			index_src = index_src.replace("<!--#BODYTITLE#-->", bTitle);
 
-			String names = "<script>var img_pos = -1; var img_list = [";
+			String img_list = "<script>var img_pos = -1; var img_list = [";
 
 			String content = "<!--START-->\n";
 			for (String key : images.keySet()) {
 				content += "<div data-long-press-delay=\"500\" class=\"sbox\" url=\"data/" + key + "\">";
 				content += "<a m=\"data/m/" + key + "\"><img title=\"" + key + "\" class=\"simg\" style=\"opacity:0\" b=\"data/" + key + "\" s=\"data/s/" + key + "\" /></a>";
 				content += "<div class=\"bbox\" fname=\"" + key + "\"></div></div>\n";
-				names += "'" + key + "', ";
+				img_list += "'" + key + "', ";
 			}
 			content += "<!--END-->\n";
 
-			names = names.substring(0, names.length() - 2) + "];</script>";
+			img_list = img_list.substring(0, img_list.length() - 2) + "];</script>";
 
-			index_src = index_src.replace("<!--#CONTENT#-->", content + names);
+			index_src = index_src.replace("<!--#CONTENT#-->", content + img_list);
 			s_index = index_src.replace("<!--#COUNT#-->", String.valueOf(images.size()) + "枚の画像");
 		}
 
@@ -1054,10 +1056,10 @@ public class MainService extends Service {
 
 		public byte[] getImage(String name) {
 			try {
-				if (m_err_files.indexOf(s_images.get(name)) != -1) {
+				if (m_err_files.indexOf(name) != -1) {
 					// エラーファイルを返す
 					AssetManager assets = m_context.getAssets();
-					try (InputStream file = assets.open("html/err_m.webp")) {
+					try (InputStream file = assets.open("html/err_m.jpg")) {
 						BufferedInputStream bin = new BufferedInputStream(file);
 
 						byte[] data = new byte[1024 * 1024 * 100];
@@ -1140,10 +1142,10 @@ public class MainService extends Service {
 		public byte[] getImage_min(String name, String type) {
 			if (s_images.get(name) == null) {
 				return null;
-			} else if (m_err_files.indexOf(s_images.get(name)) != -1) {
+			} else if (m_err_files.indexOf(name) != -1) {
 				// エラーファイルを返す
 				AssetManager assets = m_context.getAssets();
-				try (InputStream file = assets.open("html/_err_" + type + ".webp")) {
+				try (InputStream file = assets.open("html/_err_" + type + ".jpg")) {
 					BufferedInputStream bin = new BufferedInputStream(file);
 
 					byte[] data = new byte[1024 * 1024 * 100];
@@ -1188,35 +1190,6 @@ public class MainService extends Service {
 				e.printStackTrace();
 			}
 
-			/*FileLock lock = null;
-			int trycou = 0;
-			while (true) {
-				try {
-					lock = file.getChannel().lock();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-				if (lock != null)
-					break;
-
-				trycou++;
-				if (trycou >= 5) {
-					try {
-						file.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					return null;
-				}
-
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}*/
-
 			BufferedInputStream bin = new BufferedInputStream(file);
 
 			try {
@@ -1240,6 +1213,25 @@ public class MainService extends Service {
 			} catch (IOException e) {
 				return null;
 			}
+		}
+
+		public String getEtag(String name) {
+			File file_t = new File(getExternalFilesDir(null) , s_cachedir + name + ".t");
+			if (file_t.exists()) {
+				try {
+					StringBuilder builder = new StringBuilder();
+					BufferedReader reader = new BufferedReader(new FileReader(getExternalFilesDir(null) + "/" + s_cachedir + name + ".t"));
+					String etag = reader.readLine();
+					if (etag.length() == 0)
+						return "---";
+					else
+						return etag;
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+
+			return "---";
 		}
 
 		private void createThumbs(String docID) {
@@ -1274,17 +1266,13 @@ public class MainService extends Service {
 					StringBuilder builder = new StringBuilder();
 					BufferedReader reader = new BufferedReader(new FileReader(getExternalFilesDir(null) + "/" + s_cachedir + name + ".t"));
 					String str = reader.readLine();
-					while (str != null) {
-						builder.append(str + System.getProperty("line.separator"));
-						str = reader.readLine();
-					}
 					ts_old = str;
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 
 				if (ts_new.equals(ts_old)) {
-					m_err_files.add(name);
+					//m_err_files.add(name);
 					return;
 				}
 			}
@@ -1298,6 +1286,7 @@ public class MainService extends Service {
 				m_err_files.add(name);
 				return;
 			}
+
 
 			ParcelFileDescriptor parcelFileDescriptor = null;
 			FileDescriptor fileDescriptor = null;

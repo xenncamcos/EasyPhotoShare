@@ -5,6 +5,7 @@
 html {
 	padding: 0;
 	margin: 0;
+	background-color: black;
 }
 
 body {
@@ -122,6 +123,7 @@ a {
 	padding: 0;
 	cellpadding: 0;
 	opacity: 0;
+	width: 0;
 }
 
 #lightbox-margin-table td {
