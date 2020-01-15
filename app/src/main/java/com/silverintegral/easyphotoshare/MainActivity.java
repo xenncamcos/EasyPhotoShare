@@ -139,11 +139,11 @@ public class MainActivity extends AppCompatActivity {
 			m_ap_enable_hotspot = true;
 		}
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+		//if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			m_ap_use_hotspot = false;
 			m_ap_enable_hotspot = false;
 			findViewById(R.id.main_chk_hotspot).setVisibility(View.GONE);
-		}
+		//}
 
 		// 不正な設定の修正
 		SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -433,7 +433,7 @@ public class MainActivity extends AppCompatActivity {
 		if (m_sv_ip == null) {
 			new AlertDialog.Builder(this).setCancelable(false)
 					.setTitle("IPアドレスが見つかりません")
-					.setMessage("利用可能なIPアドレスが存在しません。\nネットワークを確認して下さい。")
+					.setMessage("利用可能なIPアドレスが存在しません。\nテザリングを確認して下さい。")
 					.setPositiveButton("設定画面の表示", new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int id) {
 							startActivity(new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS));
@@ -636,25 +636,26 @@ public class MainActivity extends AppCompatActivity {
 		}
 
 		if (waitActiveIP()) {
-			//if (m_ap_hs_ssid != null) {
-				m_ap_enable_hotspot = true;
-				refreshUI();
+			m_ap_enable_hotspot = true;
+			refreshUI();
 
-				SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-				SharedPreferences.Editor editor = sharedPreferences.edit();
-				editor.putString("AP_HS_SSID", m_ap_hs_ssid);
-				editor.putString("AP_HS_PASS", m_ap_hs_pass);
-				editor.apply();
+			SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+			SharedPreferences.Editor editor = sharedPreferences.edit();
+			editor.putString("AP_HS_SSID", m_ap_hs_ssid);
+			editor.putString("AP_HS_PASS", m_ap_hs_pass);
+			editor.apply();
 
-				return true;
-			//}
+			return true;
 		}
 
 		m_ap_enable_hotspot = false;
 		m_ap_hs_ssid = null;
 		m_ap_hs_pass = null;
 
-		m_ap_state.close();
+		if (m_ap_state != null) {
+			m_ap_state.close();
+			m_ap_state = null;
+		}
 
 		refreshUI();
 		return false;
@@ -692,18 +693,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 	private void startAp_old() {
-		WifiManager mWifiManager = (WifiManager)getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-		if (mWifiManager == null) {
-			return;
-		}
-
-		Method setWifiApState;
-		try {
-			setWifiApState = mWifiManager.getClass().getMethod("setWifiApState", WifiConfiguration.class, boolean.class);
-			if (setWifiApState == null)
-				return;
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
+		WifiManager wifimanager = (WifiManager)getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+		if (wifimanager == null) {
 			return;
 		}
 
@@ -719,22 +710,36 @@ public class MainActivity extends AppCompatActivity {
 			pass += String.valueOf(rand.nextInt(9));
 		}
 
+		wifimanager.setWifiEnabled(false);
+
 		WifiConfiguration conf = new WifiConfiguration();
-		conf.SSID = ssid;
+/*		conf.SSID = ssid;
 		conf.preSharedKey = pass;
 		conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
 		conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
+		conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA);*/
+		//wifimanager.addNetwork(conf);
+
+		//WifiConfiguration  conf =  new WifiConfiguration();
+		conf.SSID = ssid;
+		conf.preSharedKey  = pass ;
+		conf.status = WifiConfiguration.Status.ENABLED;
+		conf.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.WPA_PSK);
+		conf.allowedProtocols.set(WifiConfiguration.Protocol.RSN);
 		conf.allowedProtocols.set(WifiConfiguration.Protocol.WPA);
-		mWifiManager.addNetwork(conf);
+		conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.TKIP);
+		conf.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.CCMP);
+		conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.TKIP);
+		conf.allowedPairwiseCiphers.set(WifiConfiguration.PairwiseCipher.CCMP);
 
 		try {
-			setWifiApState.invoke(mWifiManager, null,false);
-			Boolean ret = (Boolean)setWifiApState.invoke(mWifiManager, null, true);
-			if (ret != null && ret) {
+			Method setWifiApState = wifimanager.getClass().getMethod("setWifiApEnabled", WifiConfiguration.class, boolean.class);
+			setWifiApState.invoke(wifimanager, conf, true);
+			//if (ret != null && ret) {
 				m_ap_hs_ssid = ssid;
 				m_ap_hs_pass = pass;
-			}
-		} catch (IllegalAccessException | InvocationTargetException e) {
+			//}
+		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
 			e.printStackTrace();
 		}
 	}
