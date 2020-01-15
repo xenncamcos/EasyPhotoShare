@@ -40,10 +40,12 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.provider.Settings;
 import android.text.method.LinkMovementMethod;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -54,7 +56,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.Toolbar;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Inet4Address;
@@ -62,6 +67,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URLDecoder;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Random;
 
@@ -131,6 +137,12 @@ public class MainActivity extends AppCompatActivity {
 		m_ap_hs_pass = sharedPreferences.getString("AP_HS_PASS", null);
 		if (m_ap_hs_ssid != null) {
 			m_ap_enable_hotspot = true;
+		}
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			m_ap_use_hotspot = false;
+			m_ap_enable_hotspot = false;
+			findViewById(R.id.main_chk_hotspot).setVisibility(View.GONE);
 		}
 
 		// 不正な設定の修正
@@ -490,8 +502,8 @@ public class MainActivity extends AppCompatActivity {
 		editor.putString("SV_IP", "");
 		editor.apply();
 
-		if (m_ap_enable_hotspot)
-			stopAp();
+		//if (m_ap_enable_hotspot)
+			//stopAp();
 
 		m_sv_run = false;
 		refreshUI();
@@ -499,7 +511,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 	private boolean getWifiState() {
-		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		WifiManager mWifiManager = (WifiManager)getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		return mWifiManager.isWifiEnabled();
 	}
 
@@ -521,24 +533,44 @@ public class MainActivity extends AppCompatActivity {
 			else
 				port = ":" + port;
 
-			String html = "<b>実行中</b><br>"
-					+ "<a href=\"http://" + m_sv_ip + ":8088\">http://" + m_sv_ip + port + "</a><br><br>"
-					+ "<b>PATH:</b> " + m_sv_root_disp + "<br>"
-					+ "<b>TYPE:</b> " + getNetworkType() + "<br>";
-			if (m_ap_enable_hotspot && m_ap_hs_ssid != null) {
-				html += "<b>SSID:</b> " + m_ap_hs_ssid + "<br>"
-						+ "<b>PASS:</b> " + m_ap_hs_pass + "<br>";
-			} else if (m_ap_ssid != null && !getNetworkType().equals("wifi")) {
-				html += "<b>SSID:</b> " + m_ap_ssid + "<br>"
-						+ "<b>PASS:</b> " + m_ap_pass + "<br>";
-			} else {
-				html += "<b>SSID:</b> -<br>"
-						+ "<b>PASS:</b> -<br>";
-			}
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				String html = "<b>実行中</b><br>"
+						+ "<a href=\"http://" + m_sv_ip + ":8088\">http://" + m_sv_ip + port + "</a><br><br>"
+						+ "<b>PATH:</b> " + m_sv_root_disp + "<br>"
+						+ "<b>TYPE:</b> " + getNetworkType() + "<br>";
+				if (m_ap_enable_hotspot && m_ap_hs_ssid != null) {
+					html += "<b>SSID:</b> " + m_ap_hs_ssid + "<br>"
+							+ "<b>PASS:</b> " + m_ap_hs_pass + "<br>";
+				} else if (m_ap_ssid != null && !getNetworkType().equals("wifi")) {
+					html += "<b>SSID:</b> " + m_ap_ssid + "<br>"
+							+ "<b>PASS:</b> " + m_ap_pass + "<br>";
+				} else {
+					html += "<b>SSID:</b> -<br>"
+							+ "<b>PASS:</b> -<br>";
+				}
 
-			TextView tv_info = findViewById(R.id.main_txt_info_view);
-			tv_info.setText(fromHtml(html, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL));
-			tv_info.setMovementMethod(LinkMovementMethod.getInstance());
+				TextView tv_info = findViewById(R.id.main_txt_info_view);
+				tv_info.setText(fromHtml(html, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL));
+				tv_info.setMovementMethod(LinkMovementMethod.getInstance());
+			} else {
+				String text = "<b>実行中</b><br>"
+						+ "http://" + m_sv_ip + port + "\n\n"
+						+ "PATH: " + m_sv_root_disp + "\n"
+						+ "TYPE: " + getNetworkType() + "\n";
+				if (m_ap_enable_hotspot && m_ap_hs_ssid != null) {
+					text += "SSID: " + m_ap_hs_ssid + "\n"
+							+ "PASS: " + m_ap_hs_pass + "\n";
+				} else if (m_ap_ssid != null && !getNetworkType().equals("wifi")) {
+					text += "SSID: " + m_ap_ssid + "\n"
+							+ "PASS: " + m_ap_pass + "\n";
+				} else {
+					text += "SSID: -\nPASS: -\n";
+				}
+
+				TextView tv_info = findViewById(R.id.main_txt_info_view);
+				tv_info.setText(text);
+				tv_info.setMovementMethod(LinkMovementMethod.getInstance());
+			}
 		} else {
 			if (m_sv_root_disp.equals(""))
 				findViewById(R.id.main_btn_start).setEnabled(false);
@@ -555,11 +587,15 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(R.id.main_chk_hotspot).setEnabled(true);
 
 
-			String html = "<b>停止中</b><br><br><br><br><br>";
-
-			TextView tv_info = findViewById(R.id.main_txt_info_view);
-			tv_info.setText(fromHtml(html, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL));
-			tv_info.setMovementMethod(LinkMovementMethod.getInstance());
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+				TextView tv_info = findViewById(R.id.main_txt_info_view);
+				tv_info.setText(fromHtml("<b>停止中</b>", TO_HTML_PARAGRAPH_LINES_INDIVIDUAL));
+				tv_info.setMovementMethod(LinkMovementMethod.getInstance());
+			} else {
+				TextView tv_info = findViewById(R.id.main_txt_info_view);
+				tv_info.setText("停止中");
+				tv_info.setMovementMethod(LinkMovementMethod.getInstance());
+			}
 		}
 	}
 
@@ -569,15 +605,21 @@ public class MainActivity extends AppCompatActivity {
 		intent.putExtra("HOST_IP", m_sv_ip);
 		intent.putExtra("HOST_PORT", m_sv_port);
 
-		if (m_ap_enable_hotspot) {
-			intent.putExtra("AP_SSID", m_ap_hs_ssid);
-			intent.putExtra("AP_PASS", m_ap_hs_pass);
+		if (getNetworkType().equals("wifi")) {
+			intent.putExtra("AP_SSID", "");
+			intent.putExtra("AP_PASS", "");
+			intent.putExtra("AP_HOTSPOT", true);
 		} else {
-			intent.putExtra("AP_SSID", m_ap_ssid);
-			intent.putExtra("AP_PASS", m_ap_pass);
-		}
+			if (m_ap_enable_hotspot) {
+				intent.putExtra("AP_SSID", m_ap_hs_ssid);
+				intent.putExtra("AP_PASS", m_ap_hs_pass);
+			} else {
+				intent.putExtra("AP_SSID", m_ap_ssid);
+				intent.putExtra("AP_PASS", m_ap_pass);
+			}
 
-		intent.putExtra("AP_HOTSPOT", m_ap_enable_hotspot);
+			intent.putExtra("AP_HOTSPOT", m_ap_enable_hotspot);
+		}
 
 		if (m_ap_enable_hotspot)
 			startActivity(intent);
@@ -612,16 +654,11 @@ public class MainActivity extends AppCompatActivity {
 		m_ap_hs_ssid = null;
 		m_ap_hs_pass = null;
 
-		if (m_ap_state != null) {
-			m_ap_state.close();
-			m_ap_state = null;
-		}
-		m_ap_state = null;
+		m_ap_state.close();
 
 		refreshUI();
 		return false;
 	}
-
 
 	@RequiresApi(api = Build.VERSION_CODES.O)
 	private void startAp_new() {
@@ -655,7 +692,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 	private void startAp_old() {
-		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		WifiManager mWifiManager = (WifiManager)getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		if (mWifiManager == null) {
 			return;
 		}
@@ -724,13 +761,7 @@ public class MainActivity extends AppCompatActivity {
 		m_ap_hs_ssid = null;
 		m_ap_hs_pass = null;
 
-		try {
-			if (m_ap_state != null) {
-				m_ap_state.close();
-				m_ap_state = null;
-			}
-		} catch (Exception ignored) {
-		}
+		m_ap_state.close();
 	}
 
 
@@ -738,7 +769,7 @@ public class MainActivity extends AppCompatActivity {
 		m_ap_hs_ssid = null;
 		m_ap_hs_pass = null;
 
-		WifiManager mWifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		WifiManager mWifiManager = (WifiManager)getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		if (mWifiManager == null) {
 			return;
 		}

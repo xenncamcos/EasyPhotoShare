@@ -91,7 +91,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="HOTSPOTの起動を有効にする"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:visibility="visible" />
 
 
             <TextView
